@@ -1765,6 +1765,947 @@ footer{
   }
 
 }
+
+
+/* =========================================================
+   DOWA RESPONSIVE AUDIT — GLOBAL RESPONSIVE LAYER
+   Keeps the existing UI/design intact while making every
+   existing page, component and interaction adapt cleanly.
+========================================================= */
+
+html,
+body{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden;
+}
+
+body{
+  min-width:0;
+}
+
+img,
+video,
+svg,
+canvas{
+  max-width:100%;
+}
+
+input,
+select,
+textarea,
+button{
+  max-width:100%;
+}
+
+button,
+a,
+input,
+select,
+textarea{
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* Prevent long names, addresses and generated content from forcing a row wider. */
+.product-card,
+.product-info,
+.product-info h3,
+.product-info p,
+.detail-copy,
+.detail-copy h1,
+.detail-description,
+.customer-review,
+.customer-review p,
+.account-panel,
+.checkout-card,
+.address-card,
+.checkout-product,
+.order-card,
+.order-item,
+.wallet-card,
+.wallet-transaction,
+.payment-box,
+.modal,
+.footer-column,
+.section-heading > *,
+.shop-top > *{
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+
+/* Large screens: keep the existing layout visually balanced instead of
+   allowing content blocks to stretch indefinitely. */
+@media(min-width:1600px){
+  .category-section,
+  .products-section,
+  .shop-page,
+  .product-detail,
+  .account-page,
+  .checkout-page,
+  .payment-page,
+  footer{
+    padding-left:max(6%,calc((100vw - 1600px)/2));
+    padding-right:max(6%,calc((100vw - 1600px)/2));
+  }
+}
+
+/* Tablet / compact desktop */
+@media(max-width:1100px){
+  .nav-links{
+    gap:18px;
+  }
+
+  .nav-actions{
+    gap:12px;
+  }
+
+  .nav-dropdown{
+    max-width:calc(100vw - 40px);
+  }
+
+  .product-detail-grid{
+    gap:35px;
+  }
+
+  .detail-copy h1{
+    font-size:clamp(38px,5vw,51px);
+  }
+
+  .checkout-grid{
+    grid-template-columns:minmax(0,1fr) minmax(300px,400px);
+  }
+
+  .account-grid{
+    grid-template-columns:minmax(190px,230px) minmax(0,1fr);
+  }
+
+  .footer-grid{
+    grid-template-columns:1.4fr 1fr 1fr 1fr;
+  }
+}
+
+/* Mobile and tablet portrait layouts */
+@media(max-width:950px){
+  .nav-links{
+    display:none;
+  }
+
+  .mobile-menu{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:44px;
+    min-height:44px;
+  }
+
+  .nav-actions{
+    gap:6px;
+  }
+
+  .nav-btn{
+    min-width:44px;
+    min-height:44px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .trust{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .trust-item{
+    min-width:0;
+    border-right:1px solid var(--line);
+  }
+
+  .trust-item:nth-child(2n){
+    border-right:0;
+  }
+
+  .product-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .product-detail-grid,
+  .checkout-grid,
+  .account-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  .detail-image{
+    height:clamp(360px,65vw,500px);
+  }
+
+  .review-list{
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  .footer-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+/* Phones */
+@media(max-width:600px){
+  .announcement{
+    padding:9px 12px;
+    font-size:clamp(8px,2.5vw,10px);
+    line-height:1.4;
+  }
+
+  nav{
+    height:65px;
+    padding:0 4%;
+  }
+
+  .logo{
+    font-size:clamp(20px,6vw,22px);
+    letter-spacing:4px;
+    flex-shrink:0;
+  }
+
+  .nav-actions{
+    gap:2px;
+  }
+
+  .nav-btn,
+  .mobile-menu{
+    min-width:42px;
+    min-height:42px;
+  }
+
+  .mobile-nav-panel{
+    top:65px;
+    left:0;
+    right:0;
+    width:100%;
+    max-width:100%;
+    max-height:calc(100vh - 65px);
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding:16px 5%;
+  }
+
+  .mobile-nav-panel a{
+    min-height:44px;
+    display:flex;
+    align-items:center;
+  }
+
+  .hero{
+    min-height:clamp(520px,82vh,680px);
+    padding:clamp(44px,12vw,80px) 6%;
+  }
+
+  .hero-content{
+    width:100%;
+    max-width:650px;
+  }
+
+  .hero h1{
+    font-size:clamp(42px,13vw,58px);
+    line-height:.98;
+    max-width:100%;
+    overflow-wrap:anywhere;
+  }
+
+  .hero p{
+    font-size:clamp(13px,3.6vw,15px);
+    max-width:100%;
+  }
+
+  .hero-buttons{
+    flex-direction:column;
+    align-items:stretch;
+    width:100%;
+  }
+
+  .hero-buttons .btn{
+    width:100%;
+    min-height:46px;
+  }
+
+  .trust-item{
+    padding:18px 12px;
+    font-size:10px;
+    line-height:1.5;
+  }
+
+  .category-section{
+    padding:26px 6% 8px;
+  }
+
+  .category-nav{
+    gap:20px;
+    max-width:100%;
+    padding-bottom:2px;
+  }
+
+  .category-nav button{
+    min-height:42px;
+    flex:0 0 auto;
+  }
+
+  .products-section,
+  .shop-page,
+  .product-detail,
+  .account-page,
+  .checkout-page,
+  .payment-page{
+    padding-left:6%;
+    padding-right:6%;
+  }
+
+  .products-section{
+    padding-top:34px;
+    padding-bottom:70px;
+  }
+
+  .section-heading{
+    display:block;
+  }
+
+  .section-heading h2{
+    font-size:clamp(32px,10vw,39px);
+    line-height:1.05;
+    margin-bottom:14px;
+  }
+
+  .section-heading p{
+    max-width:100%;
+    font-size:12px;
+  }
+
+  .product-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+  }
+
+  .product-image{
+    height:auto;
+    aspect-ratio:1 / 1.08;
+  }
+
+  .product-info{
+    padding:11px;
+  }
+
+  .product-info h3{
+    font-size:clamp(14px,4.2vw,17px);
+    line-height:1.2;
+  }
+
+  .product-info p{
+    font-size:9px;
+    line-height:1.4;
+  }
+
+  .product-rating{
+    font-size:9px;
+  }
+
+  .product-bottom{
+    gap:8px;
+    align-items:flex-end;
+  }
+
+  .product-arrow{
+    flex:0 0 31px;
+  }
+
+  .shop-page{
+    padding-top:40px;
+    padding-bottom:70px;
+  }
+
+  .shop-top{
+    display:block;
+    margin-bottom:25px;
+  }
+
+  .shop-top h1{
+    font-size:clamp(38px,12vw,55px);
+    line-height:1;
+    margin-bottom:10px;
+  }
+
+  .filters{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:12px;
+    margin-bottom:28px;
+  }
+
+  .search-box,
+  .filter-item{
+    width:100%;
+    min-width:0;
+  }
+
+  .search-box input,
+  .filter-select{
+    min-height:46px;
+  }
+
+  .product-detail{
+    padding-top:35px;
+    padding-bottom:75px;
+  }
+
+  .back-link{
+    min-height:44px;
+    display:inline-flex;
+    align-items:center;
+  }
+
+  .product-detail-grid{
+    gap:28px;
+  }
+
+  .detail-image{
+    height:auto;
+    aspect-ratio:1 / 1;
+    min-height:0;
+  }
+
+  .detail-copy{
+    padding-top:0;
+  }
+
+  .detail-copy h1{
+    font-size:clamp(34px,10vw,42px);
+    line-height:1.02;
+  }
+
+  .detail-price{
+    font-size:19px;
+  }
+
+  .rating-summary{
+    flex-wrap:wrap;
+    gap:7px 10px;
+  }
+
+  .detail-description{
+    font-size:13px;
+    line-height:1.75;
+  }
+
+  .color-swatches,
+  .size-options,
+  .share-buttons{
+    gap:8px;
+  }
+
+  .color-option{
+    min-height:50px;
+  }
+
+  .color-swatch{
+    width:64px;
+    height:38px;
+  }
+
+  .size-option,
+  .share-btn{
+    min-height:44px;
+  }
+
+  .quantity button{
+    width:44px;
+    height:44px;
+  }
+
+  .quantity span{
+    width:44px;
+  }
+
+  .detail-actions{
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  .detail-actions .btn{
+    width:100%;
+    min-height:48px;
+  }
+
+  .product-reviews{
+    margin-top:60px;
+    padding-top:40px;
+  }
+
+  .reviews-header{
+    display:block;
+  }
+
+  .reviews-header h2{
+    font-size:clamp(32px,9vw,42px);
+  }
+
+  .review-summary-box{
+    text-align:left;
+    margin-top:15px;
+  }
+
+  .big-rating{
+    font-size:36px;
+  }
+
+  .customer-review{
+    padding:20px;
+  }
+
+  .customer-review p{
+    font-size:14px;
+  }
+
+  .auth-page{
+    min-height:calc(100vh - 65px);
+    padding:40px 5%;
+  }
+
+  .auth-box{
+    padding:22px;
+  }
+
+  .auth-box h2{
+    font-size:clamp(30px,9vw,34px);
+  }
+
+  .form-row{
+    grid-template-columns:minmax(0,1fr);
+  }
+
+  .form-group input,
+  .form-group textarea{
+    min-height:46px;
+  }
+
+  .otp-code{
+    font-size:clamp(21px,7vw,25px);
+    letter-spacing:clamp(5px,2vw,8px);
+  }
+
+  .otp-input{
+    letter-spacing:clamp(5px,2vw,8px);
+  }
+
+  .account-page{
+    padding-top:40px;
+    padding-bottom:75px;
+  }
+
+  .account-menu button{
+    min-height:48px;
+  }
+
+  .account-panel{
+    padding:22px;
+  }
+
+  .wishlist-header{
+    align-items:flex-start;
+  }
+
+  .wishlist-header h2{
+    font-size:clamp(32px,9vw,38px);
+  }
+
+  .wishlist-header .btn{
+    width:100%;
+    min-height:46px;
+  }
+
+  .cart-drawer{
+    width:100%;
+    max-width:100%;
+    padding:22px;
+  }
+
+  .cart-item{
+    grid-template-columns:64px minmax(0,1fr);
+    gap:10px;
+  }
+
+  .cart-thumb{
+    width:64px;
+    height:64px;
+  }
+
+  .cart-item-price{
+    grid-column:2;
+    text-align:left;
+  }
+
+  .checkout-page{
+    padding-top:40px;
+    padding-bottom:75px;
+  }
+
+  .checkout-card{
+    padding:20px;
+  }
+
+  .checkout-card h2{
+    font-size:clamp(26px,8vw,30px);
+  }
+
+  .address-card{
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+
+  .checkout-product{
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .terms label{
+    align-items:flex-start;
+  }
+
+  .payment-page{
+    padding-top:50px;
+    padding-bottom:70px;
+  }
+
+  .payment-box{
+    padding:22px;
+  }
+
+  .payment-box h1{
+    font-size:clamp(32px,9vw,40px);
+  }
+
+  .modal-overlay{
+    padding:12px;
+  }
+
+  .modal{
+    padding:22px;
+    max-height:90vh;
+  }
+
+  .modal h2{
+    font-size:clamp(26px,8vw,30px);
+  }
+
+  .modal-actions{
+    flex-direction:column-reverse;
+  }
+
+  .modal-actions .btn{
+    width:100%;
+    min-height:46px;
+  }
+
+  footer{
+    padding-top:48px;
+    padding-bottom:25px;
+  }
+
+  .footer-grid{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:25px 18px;
+  }
+
+  .footer-bottom{
+    display:block;
+    line-height:2;
+  }
+
+  .toast{
+    left:5%;
+    right:5%;
+    width:auto;
+    max-width:none;
+    text-align:center;
+    transform:translateY(100px);
+  }
+
+  .toast.show{
+    transform:translateY(0);
+  }
+
+  .order-top{
+    display:block;
+  }
+
+  .order-status{
+    margin-top:12px;
+  }
+
+  .order-item{
+    flex-wrap:wrap;
+  }
+
+  .order-actions{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .order-actions .btn{
+    width:100%;
+    min-height:46px;
+  }
+
+  .wallet-card{
+    padding:22px;
+  }
+
+  .wallet-balance{
+    font-size:clamp(30px,9vw,36px);
+  }
+
+  .wallet-actions{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .wallet-actions .btn{
+    width:100%;
+    min-height:46px;
+  }
+
+  .wallet-form > div{
+    flex-direction:column !important;
+    align-items:stretch !important;
+  }
+
+  .wallet-form input{
+    width:100% !important;
+    min-width:0 !important;
+  }
+
+  .wallet-form .btn{
+    width:100%;
+    min-height:46px;
+  }
+
+  .wallet-transaction{
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  .order-tracker{
+    max-width:100%;
+  }
+}
+
+/* Very small phones: preserve the two-column shopping grid without allowing
+   text or controls to become cramped. */
+@media(max-width:360px){
+  .nav-actions{
+    gap:0;
+  }
+
+  .nav-btn,
+  .mobile-menu{
+    min-width:39px;
+    min-height:42px;
+  }
+
+  .logo{
+    font-size:19px;
+    letter-spacing:3px;
+  }
+
+  .hero h1{
+    font-size:clamp(39px,12.5vw,48px);
+  }
+
+  .product-grid{
+    gap:8px;
+  }
+
+  .product-info{
+    padding:9px;
+  }
+
+  .product-info h3{
+    font-size:14px;
+  }
+
+  .product-bottom{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .product-arrow{
+    align-self:flex-end;
+  }
+
+  .color-swatch{
+    width:58px;
+    height:36px;
+  }
+
+  .auth-box,
+  .checkout-card,
+  .account-panel,
+  .payment-box,
+  .modal{
+    padding:18px;
+  }
+}
+
+/* Landscape phones: use the available width rather than a tall stacked hero. */
+@media(max-width:950px) and (orientation:landscape){
+  .hero{
+    min-height:500px;
+  }
+
+  .hero-content{
+    max-width:720px;
+  }
+
+  .hero-buttons{
+    flex-direction:row;
+    align-items:center;
+    width:auto;
+  }
+
+  .hero-buttons .btn{
+    width:auto;
+  }
+}
+
+
+
+/* =========================
+   CUSTOMER SUPPORT INBOX + ADMIN
+========================= */
+.support-message-form{display:grid;gap:14px;margin-top:22px;padding-top:22px;border-top:1px solid var(--line)}
+.support-field{display:grid;gap:7px}.support-field label{font-size:11px;font-weight:600;letter-spacing:.4px}
+.support-field input,.support-field textarea,.support-field select{width:100%;box-sizing:border-box;border:1px solid var(--line);background:#fff;color:var(--ink);padding:13px 14px;font:inherit;font-size:12px;outline:none;border-radius:0}
+.support-field textarea{min-height:120px;resize:vertical;line-height:1.55}.support-field input:focus,.support-field textarea:focus,.support-field select:focus{border-color:var(--dark)}
+.support-login-note{padding:12px 14px;background:var(--soft);font-size:11px;line-height:1.55;color:var(--muted)}
+.support-conversation{margin-top:22px;border-top:1px solid var(--line);padding-top:22px}.support-conversation h3,.admin-section-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.support-thread{display:grid;gap:10px;max-height:280px;overflow:auto;padding-right:3px}.support-bubble{max-width:88%;padding:12px 14px;border:1px solid var(--line);font-size:12px;line-height:1.55}.support-bubble.customer{justify-self:end;background:var(--dark);color:#fff;border-color:var(--dark)}.support-bubble.admin{justify-self:start;background:#fff}.support-bubble small{display:block;margin-top:6px;opacity:.65;font-size:9px}
+.support-empty{font-size:11px;color:var(--muted);padding:14px 0}.support-status{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);margin-bottom:12px}.support-dot{width:7px;height:7px;border-radius:50%;background:#999}.support-dot.open{background:#6b8f71}.support-dot.waiting{background:#b18b55}.support-dot.resolved{background:#777}
+.admin-page{padding:70px 5vw 100px;min-height:70vh}.admin-shell{max-width:1400px;margin:0 auto}.admin-header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:30px}.admin-header h1{font:400 clamp(30px,4vw,52px) Georgia,serif;margin:6px 0 0}.admin-header p{font-size:12px;color:var(--muted);margin-top:8px}.admin-actions{display:flex;gap:10px;flex-wrap:wrap}.admin-grid{display:grid;grid-template-columns:minmax(280px,380px) minmax(0,1fr);gap:18px;align-items:start}.admin-panel{border:1px solid var(--line);background:#fff;min-width:0}.admin-panel-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}.admin-panel-head strong{font-size:12px}.admin-count{font-size:10px;color:var(--muted)}.admin-conversation-list{max-height:650px;overflow:auto}.admin-conversation-item{display:block;width:100%;padding:16px 20px;border:0;border-bottom:1px solid var(--line);background:#fff;text-align:left;cursor:pointer;color:var(--ink)}.admin-conversation-item:hover,.admin-conversation-item.active{background:var(--soft)}.admin-conversation-item strong{display:block;font-size:12px;margin-bottom:5px}.admin-conversation-item p{margin:0;color:var(--muted);font-size:10px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.admin-conversation-meta{display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:9px;color:var(--muted)}.admin-unread{font-weight:700;color:var(--dark)}.admin-detail{min-height:650px;display:flex;flex-direction:column}.admin-detail-body{padding:20px;flex:1;min-height:0}.admin-detail-empty{display:grid;place-items:center;min-height:450px;text-align:center;color:var(--muted);font-size:12px;padding:30px}.admin-customer-card{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:15px;background:var(--soft);margin-bottom:20px}.admin-customer-card div{min-width:0}.admin-customer-card span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:5px}.admin-customer-card strong{display:block;font-size:11px;overflow-wrap:anywhere}.admin-thread{display:grid;gap:12px;max-height:410px;overflow:auto;padding:5px 3px 10px}.admin-bubble{max-width:78%;padding:13px 15px;border:1px solid var(--line);font-size:12px;line-height:1.55}.admin-bubble.customer{justify-self:start;background:#fff}.admin-bubble.admin{justify-self:end;background:var(--dark);color:#fff;border-color:var(--dark)}.admin-bubble small{display:block;margin-top:7px;font-size:9px;opacity:.65}.admin-reply{border-top:1px solid var(--line);padding:18px 20px;display:grid;gap:10px}.admin-reply textarea{width:100%;min-height:100px;box-sizing:border-box;border:1px solid var(--line);padding:13px 14px;resize:vertical;font:inherit;font-size:12px;outline:none}.admin-reply-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.admin-status-control{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--muted)}.admin-status-control select{border:1px solid var(--line);background:#fff;padding:9px 10px;font-size:10px}.admin-note{font-size:10px;color:var(--muted);line-height:1.5}
+@media(max-width:900px){.admin-grid{grid-template-columns:1fr}.admin-conversation-list{max-height:360px}.admin-detail{min-height:560px}}
+@media(max-width:600px){.admin-page{padding:45px 16px 70px}.admin-header{display:block}.admin-actions{margin-top:18px}.admin-customer-card{grid-template-columns:1fr 1fr}.admin-bubble{max-width:92%}}
+
+/* =========================
+   HELP & CUSTOMER SUPPORT
+========================= */
+.help-float{
+  position:fixed;
+  right:24px;
+  bottom:24px;
+  z-index:190;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:48px;
+  padding:0 18px;
+  border:1px solid var(--dark);
+  border-radius:999px;
+  background:var(--dark);
+  color:#fff;
+  font-size:11px;
+  letter-spacing:.3px;
+  cursor:pointer;
+  box-shadow:0 10px 30px #0002;
+}
+
+.help-float:hover{
+  background:var(--dark2);
+}
+
+.help-modal{
+  max-width:680px;
+}
+
+.help-intro{
+  margin-bottom:24px;
+}
+
+.help-options{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin:20px 0 28px;
+}
+
+.help-option{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:7px;
+  min-height:92px;
+  padding:18px;
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--ink);
+  text-align:left;
+  text-decoration:none;
+  cursor:pointer;
+}
+
+.help-option:hover{
+  border-color:var(--dark);
+}
+
+.help-option strong{
+  font-size:13px;
+}
+
+.help-option span{
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.5;
+}
+
+.help-faqs{
+  border-top:1px solid var(--line);
+  padding-top:22px;
+}
+
+.help-faqs h3{
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+
+.help-faq{
+  border-bottom:1px solid var(--line);
+}
+
+.help-faq summary{
+  padding:15px 0;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.help-faq p{
+  padding:0 0 15px;
+  margin:0;
+  font-size:12px;
+}
+
+@media(max-width:600px){
+  .help-float{
+    right:14px;
+    bottom:14px;
+    min-height:46px;
+    padding:0 15px;
+  }
+
+  .help-options{
+    grid-template-columns:1fr;
+  }
+
+  .help-modal{
+    padding:24px;
+  }
+}
+
 </style>
 </head>
 
@@ -3145,6 +4086,129 @@ footer{
 </div>
 
 
+
+
+<!-- =========================
+     CUSTOMER HELP & SUPPORT
+========================= -->
+<button
+  class="help-float"
+  type="button"
+  onclick="openHelpSupport()"
+  aria-label="Open DOWA Homes Help & Support"
+>
+  Help & Support
+</button>
+
+<div
+  class="modal-overlay"
+  id="helpSupportModal"
+  onclick="if(event.target===this) closeHelpSupport()"
+>
+  <div class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="helpSupportTitle">
+
+    <h2 id="helpSupportTitle">How can we help?</h2>
+
+    <p class="help-intro">
+      Need help with an order, product, delivery or anything else? Contact DOWA Homes directly or find a quick answer below.
+    </p>
+
+    <div class="help-options">
+      <button
+        class="help-option"
+        type="button"
+        onclick="contactDowaWhatsApp()"
+      >
+        <strong>WhatsApp</strong>
+        <span>Chat with DOWA Homes for quick assistance.</span>
+      </button>
+
+      <button
+        class="help-option"
+        type="button"
+        onclick="callDowaSupport()"
+      >
+        <strong>Call Us</strong>
+        <span>Speak directly with a DOWA Homes support representative.</span>
+      </button>
+    </div>
+
+    <div class="support-message-form">
+      <div class="admin-section-title">Message DOWA Support</div>
+      <div id="supportGuestFields"></div>
+      <div class="support-field">
+        <label for="supportOrderNumber">Order Number <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+        <input id="supportOrderNumber" type="text" placeholder="e.g. DOWA-10482">
+      </div>
+      <div class="support-field">
+        <label for="supportMessageText">Your Message</label>
+        <textarea id="supportMessageText" placeholder="Tell us what you need help with..."></textarea>
+      </div>
+      <button class="btn btn-dark" type="button" onclick="sendSupportMessage()">Send Message</button>
+    </div>
+
+    <div class="support-conversation">
+      <h3>Your Conversation</h3>
+      <div id="supportConversationStatus"></div>
+      <div id="supportThread" class="support-thread"></div>
+    </div>
+
+    <div class="help-faqs">
+      <h3>Quick Help</h3>
+
+      <details class="help-faq">
+        <summary>How do I track my order?</summary>
+        <p>Sign in to your DOWA Homes account and open Orders to view your order status and delivery progress.</p>
+      </details>
+
+      <details class="help-faq">
+        <summary>Can I ask about a product before buying?</summary>
+        <p>Yes. Use WhatsApp or call DOWA Homes before placing your order if you need help with a product, size, colour or availability.</p>
+      </details>
+
+      <details class="help-faq">
+        <summary>How can I get help with delivery?</summary>
+        <p>Contact DOWA Homes through WhatsApp or phone support for questions about your delivery address, delivery progress or receiving your order.</p>
+      </details>
+    </div>
+
+    <div class="modal-actions">
+      <button
+        class="btn btn-outline-dark"
+        type="button"
+        onclick="closeHelpSupport()"
+      >
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- =========================
+     ADMIN SUPPORT DASHBOARD
+========================= -->
+<section class="page" id="adminPage">
+  <div class="admin-page"><div class="admin-shell">
+    <div class="admin-header">
+      <div><div class="eyebrow">DOWA Homes Admin</div><h1>Support Inbox</h1><p>Manage customer support conversations and reply to customers.</p></div>
+      <div class="admin-actions"><button class="btn btn-outline-dark" type="button" onclick="showPage('home')">Back to Store</button><button class="btn btn-dark" type="button" onclick="renderAdminSupport()">Refresh</button></div>
+    </div>
+    <div class="admin-grid">
+      <div class="admin-panel"><div class="admin-panel-head"><strong>Conversations</strong><span id="adminConversationCount" class="admin-count">0</span></div><div id="adminConversationList" class="admin-conversation-list"></div></div>
+      <div class="admin-panel admin-detail">
+        <div id="adminConversationDetail" class="admin-detail-body"><div class="admin-detail-empty">Select a customer conversation to view the messages and reply.</div></div>
+        <div id="adminReplyBox" class="admin-reply" style="display:none">
+          <textarea id="adminReplyText" placeholder="Write a reply to the customer..."></textarea>
+          <div class="admin-reply-row"><div class="admin-status-control">Status <select id="adminStatusSelect" onchange="updateSelectedSupportStatus(this.value)"><option>Open</option><option>Waiting for Customer</option><option>Resolved</option></select></div><button class="btn btn-dark" type="button" onclick="sendAdminSupportReply()">Reply to Customer</button></div>
+          <div class="admin-note">Prototype storage is local for now. Supabase will replace this storage when the backend phase begins.</div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
 <!-- =========================
      TOAST
 ========================= -->
@@ -3248,7 +4312,7 @@ footer{
       Help
     </h4>
 
-    <a href="#">
+    <a href="#" onclick="openHelpSupport(); return false;">
       Contact Us
     </a>
 
@@ -3668,6 +4732,11 @@ function showPage(page){
 
     renderShop();
 
+  }
+
+
+  if(page==="admin"){
+    renderAdminSupport();
   }
 
 
@@ -7309,6 +8378,79 @@ updateCartCount();
 loadProductFromUrl();
 
 loadWishlistFromUrl();
+
+const adminMode = new URLSearchParams(window.location.search).get("admin");
+if(adminMode === "1"){ showPage("admin"); }
+
+
+/* =========================
+   CUSTOMER HELP & SUPPORT
+========================= */
+const DOWA_SUPPORT_PHONE = "";
+const SUPPORT_STORAGE_KEY = "dowa_support_conversations";
+let selectedAdminConversationId = null;
+
+function getSupportConversations(){
+  try{ const data=JSON.parse(localStorage.getItem(SUPPORT_STORAGE_KEY)||"[]"); return Array.isArray(data)?data:[]; }catch(e){ return []; }
+}
+function saveSupportConversations(conversations){ localStorage.setItem(SUPPORT_STORAGE_KEY,JSON.stringify(conversations)); }
+function makeSupportId(prefix="SUP"){ return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`; }
+function formatSupportTime(value){ const d=new Date(value); return Number.isNaN(d.getTime())?"":d.toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}); }
+function escapeHtml(value){ return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;"); }
+function getCurrentSupportIdentity(){
+  if(currentUser) return {userId:String(currentUser.id||""),name:String(currentUser.name||"Customer"),email:String(currentUser.email||""),phone:String(currentUser.phone||"")};
+  return {userId:"guest",name:"Guest Customer",email:"",phone:""};
+}
+function openHelpSupport(){ document.getElementById("helpSupportModal").classList.add("show"); renderSupportGuestFields(); renderCustomerSupportThread(); }
+function closeHelpSupport(){ document.getElementById("helpSupportModal").classList.remove("show"); }
+function renderSupportGuestFields(){
+  const holder=document.getElementById("supportGuestFields"); if(!holder)return;
+  if(currentUser){ holder.innerHTML=`<div class="support-login-note">Sending as <strong>${escapeHtml(currentUser.name)}</strong> · ${escapeHtml(currentUser.email)}</div>`; return; }
+  holder.innerHTML=`<div class="support-login-note">You can send a support message as a guest. Add your name and email so the DOWA team can identify and reply to you.</div><div class="support-field"><label for="supportGuestName">Name</label><input id="supportGuestName" type="text" placeholder="Your name"></div><div class="support-field"><label for="supportGuestEmail">Email</label><input id="supportGuestEmail" type="email" placeholder="you@example.com"></div>`;
+}
+function findCustomerSupportConversation(){
+  const id=getCurrentSupportIdentity(); const conversations=getSupportConversations();
+  return conversations.filter(c=>id.userId!=="guest"?c.userId===id.userId:(c.userId==="guest"&&c.email&&id.email&&c.email===id.email)).sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))[0]||null;
+}
+function renderCustomerSupportThread(){
+  const thread=document.getElementById("supportThread"),status=document.getElementById("supportConversationStatus"); if(!thread||!status)return;
+  const c=findCustomerSupportConversation();
+  if(!c){ status.innerHTML=`<div class="support-status"><span class="support-dot"></span>No conversation yet</div>`; thread.innerHTML=`<div class="support-empty">Send a message and your DOWA support conversation will appear here.</div>`; return; }
+  const cls=c.status==="Resolved"?"resolved":c.status==="Waiting for Customer"?"waiting":"open";
+  status.innerHTML=`<div class="support-status"><span class="support-dot ${cls}"></span>${escapeHtml(c.status)}</div>`;
+  thread.innerHTML=(c.messages||[]).map(m=>`<div class="support-bubble ${m.senderType==="admin"?"admin":"customer"}">${escapeHtml(m.text)}<small>${m.senderType==="admin"?"DOWA Homes":"You"} · ${formatSupportTime(m.createdAt)}</small></div>`).join(""); thread.scrollTop=thread.scrollHeight;
+}
+function sendSupportMessage(){
+  const input=document.getElementById("supportMessageText"),order=document.getElementById("supportOrderNumber"); if(!input)return; const text=input.value.trim(); if(!text){showToast("Please write a message first.");return;}
+  const identity=getCurrentSupportIdentity(); let name=identity.name,email=identity.email;
+  if(!currentUser){ const n=document.getElementById("supportGuestName"),e=document.getElementById("supportGuestEmail"); name=n?n.value.trim():"";email=e?e.value.trim():"";if(!name||!email){showToast("Please enter your name and email.");return;} }
+  const conversations=getSupportConversations(); let c=conversations.find(x=>currentUser?x.userId===identity.userId:(x.userId==="guest"&&x.email===email)); const now=new Date().toISOString();
+  const msg={id:makeSupportId("MSG"),senderType:"customer",senderName:name,text,createdAt:now};
+  if(!c){c={id:makeSupportId(),userId:currentUser?identity.userId:"guest",name,email,phone:identity.phone||"",orderNumber:order?order.value.trim():"",status:"Open",unreadForAdmin:true,unreadForCustomer:false,createdAt:now,updatedAt:now,messages:[msg]};conversations.push(c);}else{c.name=name||c.name;c.email=email||c.email;if(order&&order.value.trim())c.orderNumber=order.value.trim();c.status="Open";c.unreadForAdmin=true;c.unreadForCustomer=false;c.updatedAt=now;c.messages=c.messages||[];c.messages.push(msg);}
+  saveSupportConversations(conversations);input.value="";if(order)order.value=c.orderNumber||"";renderCustomerSupportThread();showToast("Your message has been sent to DOWA Homes.");
+}
+function renderAdminSupport(){
+  const list=document.getElementById("adminConversationList"),count=document.getElementById("adminConversationCount"),detail=document.getElementById("adminConversationDetail"),reply=document.getElementById("adminReplyBox");if(!list||!count||!detail||!reply)return;
+  const cs=getSupportConversations().sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt)); count.textContent=`${cs.filter(c=>c.unreadForAdmin).length} unread · ${cs.length} total`;
+  if(!cs.length){list.innerHTML=`<div class="support-empty" style="padding:20px">No customer support conversations yet.</div>`;selectedAdminConversationId=null;reply.style.display="none";detail.innerHTML=`<div class="admin-detail-empty">Customer support messages will appear here.</div>`;return;}
+  if(!selectedAdminConversationId||!cs.some(c=>c.id===selectedAdminConversationId))selectedAdminConversationId=cs[0].id;
+  list.innerHTML=cs.map(c=>{const last=(c.messages||[]).at(-1);return `<button class="admin-conversation-item ${c.id===selectedAdminConversationId?"active":""}" type="button" onclick="selectAdminConversation('${c.id}')"><strong>${escapeHtml(c.name||"Customer")}${c.unreadForAdmin?` <span class="admin-unread">•</span>`:""}</strong><p>${escapeHtml(last?last.text:"No messages")}</p><div class="admin-conversation-meta"><span>${escapeHtml(c.status)}</span><span>${formatSupportTime(c.updatedAt)}</span></div></button>`;}).join(""); renderAdminConversationDetail();
+}
+function selectAdminConversation(id){ selectedAdminConversationId=id;const cs=getSupportConversations(),c=cs.find(x=>x.id===id);if(c){c.unreadForAdmin=false;saveSupportConversations(cs);}renderAdminSupport(); }
+function renderAdminConversationDetail(){
+  const c=getSupportConversations().find(x=>x.id===selectedAdminConversationId),detail=document.getElementById("adminConversationDetail"),reply=document.getElementById("adminReplyBox");if(!detail||!reply)return;
+  if(!c){detail.innerHTML=`<div class="admin-detail-empty">Select a customer conversation to view the messages and reply.</div>`;reply.style.display="none";return;}
+  detail.innerHTML=`<div class="admin-customer-card"><div><span>Customer</span><strong>${escapeHtml(c.name||"Customer")}</strong></div><div><span>Email</span><strong>${escapeHtml(c.email||"Not provided")}</strong></div><div><span>Order</span><strong>${escapeHtml(c.orderNumber||"Not provided")}</strong></div></div><div class="admin-thread">${(c.messages||[]).map(m=>`<div class="admin-bubble ${m.senderType==="admin"?"admin":"customer"}">${escapeHtml(m.text)}<small>${m.senderType==="admin"?"DOWA Homes":escapeHtml(c.name||"Customer")} · ${formatSupportTime(m.createdAt)}</small></div>`).join("")}</div>`;
+  const select=document.getElementById("adminStatusSelect"),text=document.getElementById("adminReplyText");if(select)select.value=c.status||"Open";if(text)text.value="";reply.style.display="grid";
+}
+function updateSelectedSupportStatus(status){if(!selectedAdminConversationId)return;const cs=getSupportConversations(),c=cs.find(x=>x.id===selectedAdminConversationId);if(!c)return;c.status=status;c.updatedAt=new Date().toISOString();saveSupportConversations(cs);renderAdminSupport();}
+function sendAdminSupportReply(){
+  if(!selectedAdminConversationId)return;const input=document.getElementById("adminReplyText"),text=input?input.value.trim():"";if(!text){showToast("Write a reply first.");return;}const cs=getSupportConversations(),c=cs.find(x=>x.id===selectedAdminConversationId);if(!c)return;const now=new Date().toISOString();c.messages=c.messages||[];c.messages.push({id:makeSupportId("MSG"),senderType:"admin",senderName:"DOWA Homes",text,createdAt:now});c.status="Waiting for Customer";c.unreadForAdmin=false;c.unreadForCustomer=true;c.updatedAt=now;saveSupportConversations(cs);if(input)input.value="";renderAdminSupport();showToast("Reply sent to the customer.");
+}
+function getDowaSupportPhone(){return String(DOWA_SUPPORT_PHONE||"").replace(/[^0-9+]/g,"");}
+function contactDowaWhatsApp(){const phone=getDowaSupportPhone(),message="Hello DOWA Homes, I need help with my order/product.";if(!phone){showToast("DOWA WhatsApp number has not been added yet.");return;}window.open(`https://wa.me/${phone.replace(/^\+/,"")}?text=${encodeURIComponent(message)}`,"_blank");}
+function callDowaSupport(){const phone=getDowaSupportPhone();if(!phone){showToast("DOWA support phone number has not been added yet.");return;}window.location.href=`tel:${phone}`;}
+document.addEventListener("keydown",event=>{if(event.key==="Escape"){const modal=document.getElementById("helpSupportModal");if(modal&&modal.classList.contains("show"))closeHelpSupport();}});
 
 </script>
 
