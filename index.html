@@ -1767,6 +1767,46 @@ footer{
 }
 
 
+/* =========================
+   ACCOUNT HUB
+========================= */
+.account-hub-intro{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:28px}
+.account-hub-intro h2{font:400 clamp(32px,4vw,42px) Georgia,serif;margin:5px 0 8px}
+.account-hub-intro p{font-size:12px;color:var(--muted);line-height:1.7;max-width:560px}
+.account-hub-actions{display:flex;gap:10px;flex-wrap:wrap}
+.account-hub-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.account-hub-card{border:1px solid var(--line);background:#fff;padding:20px;min-width:0}
+.account-hub-card h3{font:400 20px Georgia,serif;margin:5px 0 8px}
+.account-hub-card p{font-size:11px;line-height:1.65;color:var(--muted);margin:0 0 14px}
+.account-hub-card .account-value{font-size:12px;line-height:1.6;color:var(--ink);overflow-wrap:anywhere}
+.account-card-link{border:0;background:none;padding:0;text-align:left;font:600 11px Arial,sans-serif;cursor:pointer;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.account-socials{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+.account-social{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 13px;border:1px solid var(--line);background:#fff;color:var(--ink);font:600 10px Arial,sans-serif;text-decoration:none}
+.account-social:hover{border-color:var(--dark)}
+.account-section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:15px;flex-wrap:wrap;margin-bottom:25px}
+.account-section-head h2{font:400 clamp(30px,4vw,40px) Georgia,serif;margin:5px 0 0}
+.account-section-head p{font-size:11px;color:var(--muted);line-height:1.6;max-width:560px}
+.account-faq-list{display:grid;gap:10px}
+.account-faq-list details{border:1px solid var(--line);background:#fff;padding:15px 17px}
+.account-faq-list summary{cursor:pointer;font-size:12px;font-weight:600}
+.account-faq-list p{font-size:11px;color:var(--muted);line-height:1.7;margin:12px 0 2px}
+.account-legal{font-size:12px;line-height:1.8;color:var(--muted)}
+.account-legal h3{font:400 21px Georgia,serif;color:var(--ink);margin:22px 0 8px}
+.account-legal h3:first-child{margin-top:0}
+.account-form{display:grid;gap:14px;max-width:700px}
+.account-form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.account-form-group{display:grid;gap:7px}
+.account-form-group label{font-size:10px;font-weight:600;letter-spacing:.4px}
+.account-form-group input,.account-form-group textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);background:#fff;color:var(--ink);padding:13px 14px;font:inherit;font-size:12px;outline:none;border-radius:0}
+.account-form-group input:focus,.account-form-group textarea:focus{border-color:var(--dark)}
+.account-address-list{display:grid;gap:12px}
+.account-address-card{border:1px solid var(--line);padding:17px;display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
+.account-address-card strong{display:block;margin-bottom:5px}
+.account-address-card p{font-size:11px;color:var(--muted);line-height:1.6;margin:0}
+.account-address-actions{display:flex;gap:8px;flex-wrap:wrap}
+.account-mini-btn{border:1px solid var(--line);background:#fff;padding:9px 11px;font:600 10px Arial,sans-serif;cursor:pointer}
+.account-empty{border:1px solid var(--line);padding:28px;color:var(--muted);font-size:11px;line-height:1.6}
+
 /* =========================================================
    DOWA RESPONSIVE AUDIT — GLOBAL RESPONSIVE LAYER
    Keeps the existing UI/design intact while making every
@@ -1948,6 +1988,43 @@ textarea{
 
 /* Phones */
 @media(max-width:600px){
+  .account-hub-grid{
+    grid-template-columns:1fr;
+  }
+
+  .account-form-row{
+    grid-template-columns:1fr;
+  }
+
+  .account-address-card{
+    flex-direction:column;
+  }
+
+  .account-address-actions{
+    width:100%;
+  }
+
+  .account-address-actions .account-mini-btn{
+    flex:1;
+  }
+
+  .account-hub-actions{
+    width:100%;
+  }
+
+  .account-hub-actions .btn{
+    flex:1;
+    min-height:46px;
+  }
+
+  .account-hub-card{
+    padding:18px;
+  }
+
+  .account-social{
+    flex:1;
+  }
+
   .announcement{
     padding:9px 12px;
     font-size:clamp(8px,2.5vw,10px);
@@ -2610,14 +2687,58 @@ textarea{
   letter-spacing:.3px;
   cursor:pointer;
   box-shadow:0 10px 30px #0002;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  transition:width .22s ease, padding .22s ease, transform .22s ease;
 }
 
 .help-float:hover{
   background:var(--dark2);
 }
 
+.help-float.is-collapsed{
+  width:46px;
+  min-width:46px;
+  height:46px;
+  min-height:46px;
+  padding:0;
+  gap:0;
+  border-radius:50%;
+  font-size:0;
+}
+
+.help-float.is-collapsed::after{
+  content:"?";
+  font-size:14px;
+  line-height:1;
+  font-weight:600;
+}
+
 .help-modal{
   max-width:680px;
+  position:relative;
+}
+
+.help-close-btn{
+  position:absolute;
+  top:12px;
+  right:12px;
+  width:38px;
+  height:38px;
+  border:1px solid var(--line);
+  background:transparent;
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  line-height:1;
+  cursor:pointer;
+}
+
+.help-close-btn:hover{
+  background:var(--soft);
 }
 
 .help-intro{
@@ -2692,9 +2813,17 @@ textarea{
 @media(max-width:600px){
   .help-float{
     right:14px;
-    bottom:14px;
+    bottom:calc(74px + env(safe-area-inset-bottom) + 14px);
     min-height:46px;
     padding:0 15px;
+  }
+
+  .help-float.is-collapsed{
+    width:46px;
+    min-width:46px;
+    height:46px;
+    min-height:46px;
+    padding:0;
   }
 
   .help-options{
@@ -2702,7 +2831,129 @@ textarea{
   }
 
   .help-modal{
-    padding:24px;
+    padding:58px 24px 24px;
+  }
+}
+
+
+.account-grid.wishlist-full-page{
+  grid-template-columns:1fr;
+}
+
+.account-grid.wishlist-full-page .account-panel{
+  width:100%;
+  max-width:none;
+}
+
+@media(max-width:900px){
+  .account-grid.wishlist-full-page{
+    display:block;
+  }
+}
+
+/* =========================
+   MOBILE BOTTOM SHOP NAV
+========================= */
+.mobile-bottom-nav{
+  display:none;
+}
+
+@media(max-width:600px){
+  body{
+    padding-bottom:82px;
+  }
+
+  .mobile-bottom-nav{
+    position:fixed !important;
+    left:0 !important;
+    right:0 !important;
+    top:auto !important;
+    bottom:0 !important;
+    z-index:120;
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    height:74px;
+    padding:7px 6px calc(7px + env(safe-area-inset-bottom));
+    background:rgba(255,253,249,.98);
+    border-top:1px solid var(--line);
+    box-shadow:0 -6px 22px rgba(0,0,0,.07);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+  }
+
+  .mobile-bottom-nav button{
+    position:relative;
+    min-width:0;
+    min-height:58px;
+    padding:5px 2px;
+    border:0;
+    background:transparent;
+    color:var(--muted);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    font:600 10px/1.1 Arial,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    cursor:pointer;
+  }
+
+  .mobile-bottom-nav button svg{
+    width:21px;
+    height:21px;
+    stroke:currentColor;
+    fill:none;
+    stroke-width:1.8;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    flex-shrink:0;
+  }
+
+  .mobile-bottom-nav button.active{
+    color:var(--gold);
+  }
+
+  .mobile-bottom-nav button.active svg{
+    stroke-width:2.2;
+  }
+
+  .mobile-bottom-nav .bottom-cart-count,
+  .mobile-bottom-nav .bottom-wishlist-count{
+    position:absolute;
+    top:3px;
+    margin-left:27px;
+    min-width:17px;
+    height:17px;
+    padding:0 4px;
+    border-radius:999px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--dark);
+    color:#fff;
+    font:700 9px/1 Arial,sans-serif;
+  }
+
+  .mobile-bottom-nav .bottom-wishlist-count{
+    display:none;
+  }
+}
+
+@media(max-width:360px){
+  .mobile-bottom-nav{
+    height:72px;
+    padding-left:3px;
+    padding-right:3px;
+  }
+
+  .mobile-bottom-nav button{
+    font-size:9px;
+  }
+
+  .mobile-bottom-nav button svg{
+    width:20px;
+    height:20px;
   }
 }
 
@@ -2843,6 +3094,9 @@ textarea{
 </div>
 
 
+
+
+
 <!-- =========================
      HOME
 ========================= -->
@@ -2894,101 +3148,8 @@ textarea{
 </section>
 
 
-<div class="trust">
-
-  <div class="trust-item">
-
-    <strong>
-      Premium quality
-    </strong>
-
-    <span>
-      Carefully selected materials
-    </span>
-
-  </div>
-
-  <div class="trust-item">
-
-    <strong>
-      Nationwide delivery
-    </strong>
-
-    <span>
-      We deliver across Nigeria
-    </span>
-
-  </div>
-
-  <div class="trust-item">
-
-    <strong>
-      Secure payments
-    </strong>
-
-    <span>
-      Safe checkout experience
-    </span>
-
-  </div>
-
-  <div class="trust-item">
-
-    <strong>
-      Customer support
-    </strong>
-
-    <span>
-      We're here to help
-    </span>
-
-  </div>
-
-</div>
 
 
-<div class="category-section">
-
-  <div class="category-label">
-    Shop by category
-  </div>
-
-  <div class="category-nav">
-
-    <button
-      class="active"
-      onclick="filterCategory('All')"
-    >
-      All
-    </button>
-
-    <button
-      onclick="filterCategory('Sofas')"
-    >
-      Sofas
-    </button>
-
-    <button
-      onclick="filterCategory('Bedframes')"
-    >
-      Bedframes
-    </button>
-
-    <button
-      onclick="filterCategory('Pillows')"
-    >
-      Pillows
-    </button>
-
-    <button
-      onclick="filterCategory('Art')"
-    >
-      Art
-    </button>
-
-  </div>
-
-</div>
 
 
 <section class="products-section">
@@ -3527,6 +3688,12 @@ textarea{
       </button>
 
       <button
+        onclick="renderEditProfile()"
+      >
+        Edit Profile
+      </button>
+
+      <button
         onclick="renderOrders()"
       >
         Orders
@@ -3545,9 +3712,27 @@ textarea{
       </button>
 
       <button
-        onclick="showToast('Delivery details saved locally')"
+        onclick="renderAccountAddresses()"
       >
-        Delivery Details
+        Delivery Addresses
+      </button>
+
+      <button
+        onclick="openHelpSupport()"
+      >
+        Chat with DOWA
+      </button>
+
+      <button
+        onclick="renderAccountFaqs()"
+      >
+        FAQs
+      </button>
+
+      <button
+        onclick="renderAccountTerms()"
+      >
+        Terms & Conditions
       </button>
 
       <button
@@ -4106,6 +4291,16 @@ textarea{
   onclick="if(event.target===this) closeHelpSupport()"
 >
   <div class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="helpSupportTitle">
+
+    <button
+      class="help-close-btn"
+      type="button"
+      onclick="closeHelpSupport()"
+      aria-label="Close Help & Support"
+      title="Close"
+    >
+      ×
+    </button>
 
     <h2 id="helpSupportTitle">How can we help?</h2>
 
@@ -4692,11 +4887,94 @@ function showToast(message){
 }
 
 
+
+
+/* ==========================================
+   MOBILE BOTTOM NAVIGATION
+========================================== */
+function updateMobileBottomNav(){
+  const count = cart.reduce((sum,item)=>sum + item.quantity,0);
+  const cartBadge = document.getElementById("bottomCartCount");
+  if(cartBadge){
+    cartBadge.textContent = count;
+    cartBadge.style.display = count ? "flex" : "none";
+  }
+
+  const wishlistBadge = document.getElementById("bottomWishlistCount");
+  if(wishlistBadge){
+    wishlistBadge.textContent = wishlist.length;
+    wishlistBadge.style.display = wishlist.length ? "flex" : "none";
+  }
+}
+
+function setMobileBottomNavActive(section){
+  document.querySelectorAll("#mobileBottomNav button").forEach(button=>{
+    button.classList.remove("active");
+  });
+
+  const map = {
+    home:"bottomNavShop",
+    shop:"bottomNavShop",
+    cart:"bottomNavCart",
+    orders:"bottomNavOrders",
+    wishlist:"bottomNavWishlist",
+    account:"bottomNavAccount"
+  };
+
+  const target = document.getElementById(map[section] || "bottomNavShop");
+  if(target) target.classList.add("active");
+  updateMobileBottomNav();
+}
+
+function mobileBottomNavigate(section){
+  if(section === "cart"){
+    setMobileBottomNavActive("cart");
+    openCart();
+    return;
+  }
+
+  if(section === "orders"){
+    if(!currentUser){
+      setMobileBottomNavActive("account");
+      showPage("auth");
+      showToast("Please sign in to view your orders.");
+      return;
+    }
+    setMobileBottomNavActive("orders");
+    showPage("account");
+    renderOrders();
+    return;
+  }
+
+  if(section === "wishlist"){
+    setMobileBottomNavActive("wishlist");
+    openWishlist();
+    return;
+  }
+
+  if(section === "account"){
+    setMobileBottomNavActive("account");
+    handleAccountClick();
+    return;
+  }
+
+  setMobileBottomNavActive(section);
+  showPage(section === "shop" ? "shop" : "home");
+}
+
+
 /* ==========================================
    PAGE NAVIGATION
 ========================================== */
 
 function showPage(page){
+
+  // Navigation should always work normally even when the cart drawer is open.
+  const cartDrawer = document.getElementById("cartDrawer");
+  const drawerOverlay = document.getElementById("drawerOverlay");
+  if(cartDrawer) cartDrawer.classList.remove("show");
+  if(drawerOverlay) drawerOverlay.classList.remove("show");
+
 
   document
     .querySelectorAll(".page")
@@ -4723,12 +5001,16 @@ function showPage(page){
 
   if(page==="home"){
 
+    setMobileBottomNavActive("home");
+
     renderHome();
 
   }
 
 
   if(page==="shop"){
+
+    setMobileBottomNavActive("shop");
 
     renderShop();
 
@@ -4741,6 +5023,8 @@ function showPage(page){
 
 
   if(page==="account"){
+
+    setMobileBottomNavActive("account");
 
     if(!currentUser){
 
@@ -5819,6 +6103,8 @@ function updateCartCount(){
   ).textContent =
     count;
 
+  updateMobileBottomNav();
+
 }
 
 
@@ -6610,6 +6896,7 @@ function toggleWishlist(id){
     JSON.stringify(wishlist)
   );
 
+  updateMobileBottomNav();
 
   renderHome();
 
@@ -6640,19 +6927,39 @@ function openWishlist(){
 
   }
 
-
   const items =
     products.filter(
       p=>wishlist.includes(p.id)
     );
 
-
   showPage("account");
 
+  const accountPage =
+    document.getElementById("accountPage");
 
-  document.getElementById(
-    "accountPanel"
-  ).innerHTML = `
+  const accountGrid =
+    accountPage?.querySelector(".account-grid");
+
+  const accountMenu =
+    accountPage?.querySelector(".account-menu");
+
+  const accountPanel =
+    document.getElementById("accountPanel");
+
+  if(accountGrid){
+    accountGrid.classList.add("wishlist-full-page");
+  }
+
+  if(accountMenu){
+    accountMenu.style.display = "none";
+  }
+
+  if(accountPanel){
+    accountPanel.style.width = "100%";
+    accountPanel.style.maxWidth = "none";
+  }
+
+  accountPanel.innerHTML = `
 
     <div class="wishlist-header">
 
@@ -6673,7 +6980,6 @@ function openWishlist(){
 
       </div>
 
-
       ${
         items.length
         ?
@@ -6691,25 +6997,16 @@ function openWishlist(){
 
     </div>
 
-
     ${
       items.length
       ?
-
       `
-
         <div class="product-grid">
-
           ${items.map(productCard).join("")}
-
         </div>
-
       `
-
       :
-
       `
-
         <div style="
           background:#fff;
           border:1px solid var(--line);
@@ -6743,38 +7040,43 @@ function openWishlist(){
             class="btn btn-dark"
             onclick="showPage('shop')"
           >
-            Explore DOWA →
+            Shop DOWA →
           </button>
 
         </div>
-
       `
-
     }
 
   `;
 
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+
 }
-
-
-/* ==========================================
-   WISHLIST SHARING
-========================================== */
 
 function getWishlistShareUrl(){
 
   if(!currentUser)
     return "";
 
+  const payload = {
+    id: currentUser.id || "",
+    name: currentUser.name || "DOWA Customer",
+    email: currentUser.email || "",
+    profileImage: currentUser.profileImage || ""
+  };
 
   const wishlistId =
     btoa(
-      `${currentUser.id}-${currentUser.email}`
+      encodeURIComponent(
+        JSON.stringify(payload)
+      )
     )
     .replace(/=/g,"")
     .replace(/\//g,"")
     .replace(/\+/g,"");
-
 
   return (
     `${window.location.origin}` +
@@ -6783,7 +7085,6 @@ function getWishlistShareUrl(){
   );
 
 }
-
 
 function getWishlistShareText(){
 
@@ -7057,102 +7358,268 @@ function buyWishlistItem(productId){
 
 function renderAccount(){
 
-  if(!currentUser)
-    return;
+  if(!currentUser) return;
 
+  const firstName = String(currentUser.name || "Customer").split(" ")[0];
+  const addresses = currentUser.addresses || [];
+  const defaultAddress = addresses[0] || null;
 
-  document.getElementById(
-    "accountPanel"
-  ).innerHTML = `
+  document.getElementById("accountPanel").innerHTML = `
 
-    <div class="eyebrow">
-      My account
+    <div class="account-hub-intro">
+      <div>
+        <div class="eyebrow">My account</div>
+        <h2>Hello, ${escapeHtml(firstName)}.</h2>
+        <p>Manage your DOWA profile, orders, delivery details, saved items and conversations with the DOWA team.</p>
+      </div>
+
+      <div class="account-hub-actions">
+        <button class="btn btn-dark" type="button" onclick="renderEditProfile()">Edit Profile</button>
+        <button class="btn btn-outline-dark" type="button" onclick="openHelpSupport()">Chat with DOWA</button>
+      </div>
     </div>
 
-    <h2 style="
-      font:400 38px Georgia,serif;
-      margin-bottom:25px;
-    ">
-      Hello,
-      ${currentUser.name.split(" ")[0]}.
-    </h2>
+    <div class="account-hub-grid">
 
-
-    <div style="
-      display:grid;
-      gap:15px;
-    ">
-
-      <div>
-
-        <strong>
-          Full Name
-        </strong>
-
-        <p style="
-          color:var(--muted);
-          margin-top:5px;
-        ">
-          ${currentUser.name}
-        </p>
-
+      <div class="account-hub-card">
+        <div class="eyebrow">Profile</div>
+        <h3>Your details</h3>
+        <p>Keep your contact information current for orders and support.</p>
+        <div class="account-value"><strong>${escapeHtml(currentUser.name || "Not provided")}</strong><br>${escapeHtml(currentUser.email || "Not provided")}<br>${escapeHtml(currentUser.phone || "Not provided")}</div>
+        <br>
+        <button class="account-card-link" type="button" onclick="renderEditProfile()">Edit profile →</button>
       </div>
 
-
-      <div>
-
-        <strong>
-          Email
-        </strong>
-
-        <p style="
-          color:var(--muted);
-          margin-top:5px;
-        ">
-          ${currentUser.email}
-        </p>
-
+      <div class="account-hub-card">
+        <div class="eyebrow">Delivery</div>
+        <h3>Your addresses</h3>
+        <p>Save and manage the addresses you use for DOWA deliveries.</p>
+        <div class="account-value">${defaultAddress ? escapeHtml([defaultAddress.street, defaultAddress.city, defaultAddress.state].filter(Boolean).join(", ")) : "No saved address yet."}</div>
+        <br>
+        <button class="account-card-link" type="button" onclick="renderAccountAddresses()">Manage addresses →</button>
       </div>
 
-
-      <div>
-
-        <strong>
-          Phone
-        </strong>
-
-        <p style="
-          color:var(--muted);
-          margin-top:5px;
-        ">
-          ${currentUser.phone}
-        </p>
-
+      <div class="account-hub-card">
+        <div class="eyebrow">Support</div>
+        <h3>Chat with DOWA</h3>
+        <p>Send a message in the website and continue the conversation when our team replies.</p>
+        <button class="btn btn-dark" type="button" onclick="openHelpSupport()">Open DOWA Chat</button>
       </div>
 
+      <div class="account-hub-card">
+        <div class="eyebrow">Help</div>
+        <h3>FAQs</h3>
+        <p>Find quick answers about orders, delivery, products and support.</p>
+        <button class="account-card-link" type="button" onclick="renderAccountFaqs()">View FAQs →</button>
+      </div>
 
-      <div>
+      <div class="account-hub-card">
+        <div class="eyebrow">Information</div>
+        <h3>Terms & Conditions</h3>
+        <p>Read the terms that apply when using DOWA Homes and placing orders.</p>
+        <button class="account-card-link" type="button" onclick="renderAccountTerms()">Read terms →</button>
+      </div>
 
-        <strong>
-          Delivery Address
-        </strong>
-
-        <p style="
-          color:var(--muted);
-          margin-top:5px;
-        ">
-          ${
-            currentUser.address ||
-            "No address saved"
-          }
-        </p>
-
+      <div class="account-hub-card">
+        <div class="eyebrow">DOWA Homes</div>
+        <h3>Follow us</h3>
+        <p>Stay connected with DOWA Homes across our social profiles.</p>
+        <div class="account-socials">
+          <a class="account-social" href="https://www.instagram.com/dowahomes/" target="_blank" rel="noopener noreferrer">Instagram</a>
+          <a class="account-social" href="https://www.tiktok.com/@dowahomes" target="_blank" rel="noopener noreferrer">TikTok</a>
+          <a class="account-social" href="https://www.facebook.com/dowahomes/" target="_blank" rel="noopener noreferrer">Facebook</a>
+        </div>
       </div>
 
     </div>
-
   `;
 
+}
+
+function renderEditProfile(){
+  if(!currentUser) return;
+  document.getElementById("accountPanel").innerHTML = `
+    <div class="account-section-head">
+      <div>
+        <div class="eyebrow">Profile</div>
+        <h2>Edit your profile</h2>
+        <p>Update the information DOWA uses for your account, orders and support.</p>
+      </div>
+      <button class="btn btn-outline-dark" type="button" onclick="renderAccount()">Back to Account</button>
+    </div>
+
+    <form class="account-form" onsubmit="saveAccountProfile(event)">
+      <div class="account-form-row">
+        <div class="account-form-group">
+          <label for="accountProfileName">Full Name</label>
+          <input id="accountProfileName" value="${escapeHtml(currentUser.name || "")}" required>
+        </div>
+        <div class="account-form-group">
+          <label for="accountProfilePhone">Phone</label>
+          <input id="accountProfilePhone" value="${escapeHtml(currentUser.phone || "")}" required>
+        </div>
+      </div>
+      <div class="account-form-group">
+        <label for="accountProfileEmail">Email</label>
+        <input id="accountProfileEmail" type="email" value="${escapeHtml(currentUser.email || "")}" required>
+      </div>
+      <div class="account-form-group">
+        <label for="accountProfilePhoto">Profile Photo URL</label>
+        <input id="accountProfilePhoto" type="url" value="${escapeHtml(currentUser.profileImage || "")}" placeholder="https://...">
+        <small style="color:var(--muted);font-size:11px;line-height:1.5;">
+          Use a publicly accessible image URL. This photo can appear when you share your wishlist.
+        </small>
+      </div>
+      <div class="account-form-group">
+        <label for="accountProfileAddress">Primary Delivery Address</label>
+        <textarea id="accountProfileAddress" rows="4">${escapeHtml(currentUser.address || "")}</textarea>
+      </div>
+      <div class="account-hub-actions">
+        <button class="btn btn-dark" type="submit">Save Changes</button>
+        <button class="btn btn-outline-dark" type="button" onclick="renderAccount()">Cancel</button>
+      </div>
+    </form>
+  `;
+}
+
+function saveAccountProfile(event){
+  event.preventDefault();
+  if(!currentUser) return;
+
+  currentUser.name = document.getElementById("accountProfileName").value.trim();
+  currentUser.phone = document.getElementById("accountProfilePhone").value.trim();
+  currentUser.email = document.getElementById("accountProfileEmail").value.trim();
+  currentUser.profileImage =
+    document.getElementById("accountProfilePhoto")?.value.trim() || "";
+
+  currentUser.address = document.getElementById("accountProfileAddress").value.trim();
+
+  users = users.map(user => user.id === currentUser.id ? currentUser : user);
+  localStorage.setItem("dowaUsers", JSON.stringify(users));
+  localStorage.setItem("dowaUser", JSON.stringify(currentUser));
+
+  renderAccount();
+  showToast("Profile updated.");
+}
+
+function renderAccountAddresses(){
+  if(!currentUser) return;
+  const addresses = currentUser.addresses || [];
+
+  document.getElementById("accountPanel").innerHTML = `
+    <div class="account-section-head">
+      <div>
+        <div class="eyebrow">Delivery</div>
+        <h2>Delivery addresses</h2>
+        <p>Manage the places where you want DOWA Homes to deliver your orders.</p>
+      </div>
+      <button class="btn btn-outline-dark" type="button" onclick="renderAccount()">Back to Account</button>
+    </div>
+
+    <div class="account-address-list">
+      ${addresses.length ? addresses.map((address,index)=>`
+        <div class="account-address-card">
+          <div>
+            <strong>${escapeHtml(address.fullName || currentUser.name || "Delivery address")}${index===0 ? " · Default" : ""}</strong>
+            <p>${escapeHtml(address.phone || currentUser.phone || "")}</p>
+            <p>${escapeHtml([address.street,address.city,address.state,address.landmark].filter(Boolean).join(", "))}</p>
+          </div>
+          <div class="account-address-actions">
+            ${index!==0 ? `<button class="account-mini-btn" type="button" onclick="setDefaultAccountAddress(${Number(address.id)})">Set Default</button>` : ""}
+            <button class="account-mini-btn" type="button" onclick="deleteAccountAddress(${Number(address.id)})">Delete</button>
+          </div>
+        </div>
+      `).join("") : `<div class="account-empty">You do not have a saved delivery address yet. Add one during checkout and save it to your account.</div>`}
+    </div>
+
+    <div style="margin-top:18px">
+      <button class="btn btn-dark" type="button" onclick="addAccountAddress()">+ Add New Address</button>
+    </div>
+  `;
+}
+
+function addAccountAddress(){
+  if(!currentUser) return;
+  const name = prompt("Full name for this delivery address:", currentUser.name || "");
+  if(name === null) return;
+  const phone = prompt("Phone number:", currentUser.phone || "");
+  if(phone === null) return;
+  const street = prompt("Street address:", "");
+  if(street === null) return;
+  if(!name.trim() || !phone.trim() || !street.trim()){
+    showToast("Please complete the address.");
+    return;
+  }
+  const city = prompt("City:", "") || "";
+  const state = prompt("State:", "") || "";
+  const landmark = prompt("Landmark (optional):", "") || "";
+  if(!currentUser.addresses) currentUser.addresses=[];
+  currentUser.addresses.push({id:Date.now(),fullName:name.trim(),phone:phone.trim(),street:street.trim(),city:city.trim(),state:state.trim(),landmark:landmark.trim()});
+  users = users.map(user=>user.id===currentUser.id?currentUser:user);
+  localStorage.setItem("dowaUsers",JSON.stringify(users));
+  localStorage.setItem("dowaUser",JSON.stringify(currentUser));
+  renderAccountAddresses();
+  showToast("Delivery address added.");
+}
+
+function setDefaultAccountAddress(addressId){
+  if(!currentUser || !currentUser.addresses) return;
+  const index=currentUser.addresses.findIndex(address=>Number(address.id)===Number(addressId));
+  if(index<0) return;
+  const selected=currentUser.addresses.splice(index,1)[0];
+  currentUser.addresses.unshift(selected);
+  users=users.map(user=>user.id===currentUser.id?currentUser:user);
+  localStorage.setItem("dowaUsers",JSON.stringify(users));
+  localStorage.setItem("dowaUser",JSON.stringify(currentUser));
+  renderAccountAddresses();
+  showToast("Default delivery address updated.");
+}
+
+function deleteAccountAddress(addressId){
+  if(!currentUser || !currentUser.addresses) return;
+  currentUser.addresses=currentUser.addresses.filter(address=>Number(address.id)!==Number(addressId));
+  users=users.map(user=>user.id===currentUser.id?currentUser:user);
+  localStorage.setItem("dowaUsers",JSON.stringify(users));
+  localStorage.setItem("dowaUser",JSON.stringify(currentUser));
+  renderAccountAddresses();
+  showToast("Delivery address removed.");
+}
+
+function renderAccountFaqs(){
+  document.getElementById("accountPanel").innerHTML = `
+    <div class="account-section-head">
+      <div><div class="eyebrow">Help</div><h2>Frequently asked questions</h2><p>Quick answers before you contact the DOWA team.</p></div>
+      <button class="btn btn-outline-dark" type="button" onclick="renderAccount()">Back to Account</button>
+    </div>
+    <div class="account-faq-list">
+      <details><summary>How do I track my order?</summary><p>Open Orders in your DOWA account to see your order status and delivery progress.</p></details>
+      <details><summary>Can I change my delivery address?</summary><p>Yes. Open Delivery Addresses in your account and manage your saved delivery details. For an order already being processed, contact DOWA Support.</p></details>
+      <details><summary>Can I ask about a product before buying?</summary><p>Yes. Use Chat with DOWA for questions about a product, size, colour or availability.</p></details>
+      <details><summary>How do I contact DOWA?</summary><p>Use Chat with DOWA inside the website, or use the WhatsApp and Call options in Help & Support.</p></details>
+      <details><summary>Where can I see my previous conversations?</summary><p>Open Chat with DOWA. Your support thread is saved to your account in this prototype and will later be connected to Supabase.</p></details>
+    </div>
+    <div style="margin-top:20px"><button class="btn btn-dark" type="button" onclick="openHelpSupport()">Chat with DOWA →</button></div>
+  `;
+}
+
+function renderAccountTerms(){
+  document.getElementById("accountPanel").innerHTML = `
+    <div class="account-section-head">
+      <div><div class="eyebrow">Information</div><h2>Terms & Conditions</h2><p>Important information for using DOWA Homes and placing orders.</p></div>
+      <button class="btn btn-outline-dark" type="button" onclick="renderAccount()">Back to Account</button>
+    </div>
+    <div class="account-legal">
+      <h3>Orders</h3>
+      <p>Orders are processed after successful payment. Product availability, colour and size selections are attached to the order information provided at checkout.</p>
+      <h3>Delivery</h3>
+      <p>Delivery timelines vary depending on location, product type and availability. Customers are responsible for ensuring that delivery information is accurate before completing payment.</p>
+      <h3>Returns & Support</h3>
+      <p>Any applicable return, exchange or warranty conditions will follow DOWA Homes' current policies. If you need help with an order, open Chat with DOWA and include your order number where available.</p>
+      <h3>Account Information</h3>
+      <p>You are responsible for keeping your account information current and for using accurate delivery details when placing an order.</p>
+    </div>
+    <div style="margin-top:20px"><button class="btn btn-dark" type="button" onclick="openTerms()">View checkout terms →</button></div>
+  `;
 }
 
 
@@ -7161,6 +7628,11 @@ function renderAccount(){
 ========================================== */
 
 function renderCheckout(){
+
+  const sharedWishlistCheckoutProfile =
+    window.sharedWishlistCheckoutProfile || null;
+
+
 
   if(!currentUser)
     return;
@@ -8338,24 +8810,98 @@ function loadWishlistFromUrl(){
       window.location.search
     );
 
-
   const wishlistId =
     params.get("wishlist");
-
 
   if(!wishlistId)
     return;
 
+  let sharedProfile = null;
 
-  /*
-    Prototype message.
+  try{
 
-    Real public wishlist loading happens after
-    Supabase is connected.
-  */
+    const decoded =
+      decodeURIComponent(
+        atob(
+          wishlistId
+        )
+      );
 
-  showToast(
-    "Shared wishlist links will become public when Supabase is connected."
+    sharedProfile =
+      JSON.parse(decoded);
+
+    window.sharedWishlistCheckoutProfile =
+      sharedProfile;
+
+  }catch(error){
+
+    showToast(
+      "This wishlist link could not be opened."
+    );
+
+    return;
+
+  }
+
+  // Prototype visitor view. Supabase will later provide the
+  // actual shared wishlist and profile photo across devices.
+  showPage("shop");
+
+  const shopPage =
+    document.getElementById("shopPage");
+
+  if(!shopPage)
+    return;
+
+  const existingBanner =
+    document.getElementById("sharedWishlistBanner");
+
+  if(existingBanner)
+    existingBanner.remove();
+
+  const profileImage =
+    sharedProfile?.profileImage || "";
+
+  const initials =
+    String(sharedProfile?.name || "DOWA")
+      .trim()
+      .split(/\s+/)
+      .slice(0,2)
+      .map(name=>name.charAt(0).toUpperCase())
+      .join("");
+
+  const avatar =
+    profileImage
+    ?
+    `<img src="${escapeHtml(profileImage)}" alt="${escapeHtml(sharedProfile?.name || "Wishlist owner")}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;">`
+    :
+    `<div style="width:54px;height:54px;border-radius:50%;background:var(--dark);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;">${escapeHtml(initials || "D")}</div>`;
+
+  const banner =
+    document.createElement("div");
+
+  banner.id =
+    "sharedWishlistBanner";
+
+  banner.style.cssText =
+    "margin:0 5vw 30px;padding:18px 20px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;gap:14px;";
+
+  banner.innerHTML = `
+    ${avatar}
+    <div style="flex:1;">
+      <div class="eyebrow">Shared wishlist</div>
+      <strong style="display:block;font-size:16px;margin-top:4px;">
+        ${escapeHtml(sharedProfile?.name || "DOWA Customer")} shared this wishlist with you.
+      </strong>
+      <span style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">
+        You can view the saved pieces and continue to checkout.
+      </span>
+    </div>
+  `;
+
+  shopPage.insertBefore(
+    banner,
+    shopPage.firstElementChild
   );
 
 }
@@ -8454,5 +9000,132 @@ document.addEventListener("keydown",event=>{if(event.key==="Escape"){const modal
 
 </script>
 
+
+<!-- =========================
+     MOBILE BOTTOM SHOP NAV
+========================= -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Mobile shopping navigation">
+
+  <button type="button" id="bottomNavShop" class="active" onclick="mobileBottomNavigate('shop')" aria-label="Shop">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 10.5h16v9.5H4z"></path>
+      <path d="M3 10.5 5 5h14l2 5.5"></path>
+      <path d="M8 10.5v3.5M16 10.5v3.5"></path>
+    </svg>
+    <span>Shop</span>
+  </button>
+
+  <button type="button" id="bottomNavCart" onclick="mobileBottomNavigate('cart')" aria-label="Cart">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 5h2l2 11h9l2-8H7"></path>
+      <circle cx="10" cy="20" r="1"></circle>
+      <circle cx="17" cy="20" r="1"></circle>
+    </svg>
+    <span>Cart</span>
+    <span class="bottom-cart-count" id="bottomCartCount">0</span>
+  </button>
+
+  <button type="button" id="bottomNavOrders" onclick="mobileBottomNavigate('orders')" aria-label="Orders">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 3h10v18H7z"></path>
+      <path d="M9.5 7h5M9.5 11h5M9.5 15h3"></path>
+    </svg>
+    <span>Orders</span>
+  </button>
+
+  <button type="button" id="bottomNavWishlist" onclick="mobileBottomNavigate('wishlist')" aria-label="Wishlist">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.8 8.7c0 5.2-8.8 10-8.8 10s-8.8-4.8-8.8-10A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.5Z"></path>
+    </svg>
+    <span>Wishlist</span>
+    <span class="bottom-wishlist-count" id="bottomWishlistCount">0</span>
+  </button>
+
+  <button type="button" id="bottomNavAccount" onclick="mobileBottomNavigate('account')" aria-label="Account">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="8" r="3.2"></circle>
+      <path d="M5.5 20c.7-3.3 2.9-5 6.5-5s5.8 1.7 6.5 5"></path>
+    </svg>
+    <span>Account</span>
+  </button>
+
+</nav>
+
+
+
+<script>
+/* =========================
+   SWIPE-TO-MINIMIZE HELP BUTTON
+========================= */
+(function(){
+
+  const helpButton =
+    document.querySelector(".help-float");
+
+  if(!helpButton) return;
+
+  let startX = 0;
+  let startY = 0;
+  let moved = false;
+
+  function isMobile(){
+    return window.matchMedia("(max-width:600px)").matches;
+  }
+
+  function collapseHelp(){
+    if(!isMobile()) return;
+    helpButton.classList.add("is-collapsed");
+    helpButton.setAttribute("aria-label","Open DOWA Help & Support");
+  }
+
+  function expandHelp(){
+    helpButton.classList.remove("is-collapsed");
+    helpButton.setAttribute("aria-label","Open DOWA Homes Help & Support");
+  }
+
+  helpButton.addEventListener("pointerdown",function(event){
+    if(!isMobile()) return;
+    startX = event.clientX;
+    startY = event.clientY;
+    moved = false;
+  });
+
+  helpButton.addEventListener("pointermove",function(event){
+    if(!isMobile()) return;
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+    if(Math.abs(dx) > 12 || Math.abs(dy) > 12){
+      moved = true;
+    }
+  });
+
+  helpButton.addEventListener("pointerup",function(event){
+    if(!isMobile()) return;
+
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+
+    if(Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)){
+      event.preventDefault();
+      collapseHelp();
+      return;
+    }
+
+    if(!moved && helpButton.classList.contains("is-collapsed")){
+      event.preventDefault();
+      expandHelp();
+    }
+  });
+
+  helpButton.addEventListener("click",function(event){
+    if(helpButton.classList.contains("is-collapsed")){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      expandHelp();
+    }
+  },true);
+
+})();
+</script>
 </body>
 </html>
