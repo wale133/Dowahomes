@@ -2974,6 +2974,47 @@ textarea{
   console.log("DOWA Supabase client connected.");
 </script>
 
+<script>
+/* ==========================================
+   DOWA HOMES — SUPABASE AUTH SYNC
+   Supabase Auth is the single source of truth.
+========================================== */
+window.DOWA_SUPABASE.auth.onAuthStateChange(async (event, session) => {
+  try {
+    if (session?.user) {
+      const user = session.user;
+      currentUser = {
+        id: user.id,
+        auth_user_id: user.id,
+        name: user.user_metadata?.full_name || "",
+        email: user.email || "",
+        phone: user.user_metadata?.phone || "",
+        address: user.user_metadata?.address || "",
+        verified: !!user.email_confirmed_at
+      };
+
+      loadPrivateState(user.id);
+
+      // Do not let an old browser cache override the Supabase account.
+      await loadSupabaseWishlistForCurrentUser();
+      await loadSupabaseAddressesForCurrentUser();
+      await loadSupabaseCartForCurrentUser();
+
+      savePrivateUserCache();
+      updateCartCount();
+      updateMobileBottomNav();
+    } else if (event === "SIGNED_OUT") {
+      currentUser = null;
+      clearPrivateState();
+      updateCartCount();
+      updateMobileBottomNav();
+    }
+  } catch (error) {
+    console.error("DOWA Auth state sync failed:", error);
+  }
+});
+</script>
+
 </head>
 
 <body>
@@ -5069,7 +5110,7 @@ async function loadSupabaseAddressesForCurrentUser(){
       selectedDeliveryAddress = defaultAddress || currentUser.addresses[0] || null;
     }
 
-    savePrivateUserCache();
+    localStorage.setItem("dowaUser", JSON.stringify(currentUser));
 
     console.log("DOWA Supabase customer addresses loaded.");
 
@@ -5274,89 +5315,6 @@ async function clearSupabaseCartForCurrentUser(){
 }
 
 
-
-/* ==========================================
-   SUPABASE CUSTOMER NOTIFICATIONS
-========================================== */
-let supabaseCustomerNotifications = [];
-
-async function loadSupabaseNotificationsForCurrentUser(){
-  if(!currentUser || !window.DOWA_SUPABASE){
-    supabaseCustomerNotifications = [];
-    return [];
-  }
-
-  try{
-    const customerId = await getSupabaseCustomerId();
-    if(!customerId){
-      supabaseCustomerNotifications = [];
-      return [];
-    }
-
-    const { data, error } = await window.DOWA_SUPABASE
-      .from("notifications")
-      .select("id, title, message, type, is_read, created_at")
-      .eq("customer_id", customerId)
-      .order("created_at", { ascending:false })
-      .limit(50);
-
-    if(error) throw error;
-
-    supabaseCustomerNotifications = data || [];
-    return supabaseCustomerNotifications;
-  }catch(error){
-    console.error("Supabase notifications load failed:", error);
-    supabaseCustomerNotifications = [];
-    return [];
-  }
-}
-
-async function markNotificationAsRead(notificationId){
-  if(!currentUser || !window.DOWA_SUPABASE || !notificationId) return false;
-
-  try{
-    const { error } = await window.DOWA_SUPABASE
-      .from("notifications")
-      .update({ is_read:true })
-      .eq("id", notificationId)
-      .eq("customer_id", currentUser.customer_id);
-
-    if(error) throw error;
-
-    const item = supabaseCustomerNotifications.find(n=>Number(n.id)===Number(notificationId));
-    if(item) item.is_read = true;
-    return true;
-  }catch(error){
-    console.error("Notification read update failed:", error);
-    return false;
-  }
-}
-
-async function markAllNotificationsAsRead(){
-  if(!currentUser || !window.DOWA_SUPABASE || !currentUser.customer_id) return false;
-
-  try{
-    const { error } = await window.DOWA_SUPABASE
-      .from("notifications")
-      .update({ is_read:true })
-      .eq("customer_id", currentUser.customer_id)
-      .eq("is_read", false);
-
-    if(error) throw error;
-
-    supabaseCustomerNotifications.forEach(n=>n.is_read=true);
-    return true;
-  }catch(error){
-    console.error("Mark-all-notifications update failed:", error);
-    return false;
-  }
-}
-
-function getUnreadNotificationCount(){
-  return supabaseCustomerNotifications.filter(n=>!n.is_read).length;
-}
-
-
 /* ==========================================
    RESTORE SUPABASE SESSION
 ========================================== */
@@ -5433,8 +5391,6 @@ async function restoreSupabaseSession(){
     await loadSupabaseWishlistForCurrentUser();
     await loadSupabaseAddressesForCurrentUser();
     await loadSupabaseCartForCurrentUser();
-    await loadSupabaseOrdersForCurrentUser();
-    await loadSupabaseNotificationsForCurrentUser();
 
 
     console.log(
@@ -5499,9 +5455,6 @@ window.DOWA_SUPABASE.auth.onAuthStateChange(
       loadPrivateState(currentUser.id);
       await loadSupabaseWishlistForCurrentUser();
       await loadSupabaseAddressesForCurrentUser();
-      await loadSupabaseCartForCurrentUser();
-      await loadSupabaseOrdersForCurrentUser();
-      await loadSupabaseNotificationsForCurrentUser();
 
 
     }else{
@@ -7477,9 +7430,6 @@ async function createAccount(){
       loadPrivateState(currentUser.id);
       await loadSupabaseWishlistForCurrentUser();
       await loadSupabaseAddressesForCurrentUser();
-      await loadSupabaseCartForCurrentUser();
-      await loadSupabaseOrdersForCurrentUser();
-      await loadSupabaseNotificationsForCurrentUser();
 
 
       showToast(
@@ -7553,25 +7503,7 @@ function verifyOtp(){
 
 
 function resendOtp(){
-
-  generatedOtp =
-    Math.floor(
-      100000 +
-      Math.random()*900000
-    )
-    .toString();
-
-
-  document.getElementById(
-    "demoOtp"
-  ).textContent =
-    generatedOtp;
-
-
-  showToast(
-    "New demo OTP generated."
-  );
-
+  showToast("Please use the email verification link sent by Supabase.");
 }
 
 
@@ -7590,7 +7522,14 @@ async function login(){
 
     if(error){
       console.error("Supabase login error:", error);
-      showToast(error.message);
+
+      if(error.code === "invalid_credentials" || error.message?.toLowerCase().includes("invalid login credentials")){
+        showToast("Invalid email or password. If you created this account before Supabase Auth was connected, please create the account again or reset the password.");
+      }else if(error.message?.toLowerCase().includes("email not confirmed")){
+        showToast("Please verify your email before signing in.");
+      }else{
+        showToast(error.message || "Unable to sign in.");
+      }
       return;
     }
 
@@ -7614,8 +7553,6 @@ async function login(){
     await loadSupabaseWishlistForCurrentUser();
     await loadSupabaseAddressesForCurrentUser();
     await loadSupabaseCartForCurrentUser();
-    await loadSupabaseOrdersForCurrentUser();
-    await loadSupabaseNotificationsForCurrentUser();
 
     showToast("Welcome back.");
     setTimeout(()=>showPage("home"),700);
@@ -7636,7 +7573,6 @@ async function logout(){
       return;
     }
     currentUser = null;
-    supabaseCustomerNotifications = [];
     clearPrivateState();
     showToast("You have been signed out.");
     showPage("home");
@@ -8460,7 +8396,7 @@ async function saveAccountProfile(event){
     currentUser.address = primaryAddress;
     currentUser.verified = !!updatedAuthUser?.email_confirmed_at;
 
-    savePrivateUserCache();
+    localStorage.setItem("dowaUser", JSON.stringify(currentUser));
 
     await loadSupabaseAddressesForCurrentUser();
 
@@ -8679,7 +8615,7 @@ function renderAccountFaqs(){
       <details><summary>Can I change my delivery address?</summary><p>Yes. Open Delivery Addresses in your account and manage your saved delivery details. For an order already being processed, contact DOWA Support.</p></details>
       <details><summary>Can I ask about a product before buying?</summary><p>Yes. Use Chat with DOWA for questions about a product, size, colour or availability.</p></details>
       <details><summary>How do I contact DOWA?</summary><p>Use Chat with DOWA inside the website, or use the WhatsApp and Call options in Help & Support.</p></details>
-      <details><summary>Where can I see my previous conversations?</summary><p>Open Chat with DOWA. Your support conversation is saved to your DOWA account in Supabase.</p></details>
+      <details><summary>Where can I see my previous conversations?</summary><p>Open Chat with DOWA. Your support thread is saved to your account in this prototype and will later be connected to Supabase.</p></details>
     </div>
     <div style="margin-top:20px"><button class="btn btn-dark" type="button" onclick="openHelpSupport()">Chat with DOWA →</button></div>
   `;
@@ -9841,7 +9777,7 @@ function toggleMobileMenu(){
    PRODUCT URL
 ========================================== */
 
-async function loadProductFromUrl(){
+function loadProductFromUrl(){
 
   const params =
     new URLSearchParams(
@@ -9875,8 +9811,6 @@ async function loadProductFromUrl(){
 
   showPage("product");
 
-  renderProductDetail();
-  await loadSupabaseReviewsForProduct(product.id);
   renderProductDetail();
 
 }
@@ -10015,13 +9949,9 @@ renderHome();
 
 renderShop();
 
-if(currentUser){
-  ensureDemoOrder();
-}
-
 updateCartCount();
 
-loadProductFromUrl().catch(error=>console.error("Product URL load failed:", error));
+loadProductFromUrl();
 
 loadWishlistFromUrl();
 
