@@ -2958,6 +2958,63 @@ textarea{
 }
 
 </style>
+
+<!-- ==========================================
+     DOWA HOMES — SUPABASE CONNECTION
+     ========================================== -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  window.DOWA_SUPABASE = window.supabase.createClient(
+    "https://knokotruplffcwsfzwny.supabase.co",
+    "sb_publishable_VQa0mu_Xqr0dx6SBxuxfyw_p4cdFdS_"
+  );
+
+  console.log("DOWA Supabase client connected.");
+</script>
+
+<script>
+/* ==========================================
+   DOWA HOMES — SUPABASE AUTH SYNC
+   Supabase Auth is the single source of truth.
+========================================== */
+window.DOWA_SUPABASE.auth.onAuthStateChange(async (event, session) => {
+  try {
+    if (session?.user) {
+      const user = session.user;
+      currentUser = {
+        id: user.id,
+        auth_user_id: user.id,
+        name: user.user_metadata?.full_name || "",
+        email: user.email || "",
+        phone: user.user_metadata?.phone || "",
+        address: user.user_metadata?.address || "",
+        verified: !!user.email_confirmed_at
+      };
+
+      loadPrivateState(user.id);
+
+      // Do not let an old browser cache override the Supabase account.
+      await loadSupabaseWishlistForCurrentUser();
+      await loadSupabaseAddressesForCurrentUser();
+      await loadSupabaseCartForCurrentUser();
+
+      savePrivateUserCache();
+      updateCartCount();
+      updateMobileBottomNav();
+    } else if (event === "SIGNED_OUT") {
+      currentUser = null;
+      clearPrivateState();
+      updateCartCount();
+      updateMobileBottomNav();
+    }
+  } catch (error) {
+    console.error("DOWA Auth state sync failed:", error);
+  }
+});
+</script>
+
 </head>
 
 <body>
@@ -4714,83 +4771,94 @@ const products = [
 
 
 /* ==========================================
-   PRODUCT REVIEWS
+   PRODUCT REVIEWS — SUPABASE
 ========================================== */
 
-const productReviews = {
+const productReviews = {};
+const supabaseReviewsByProduct = {};
 
-  1:[
-    {
-      name:"Ada",
-      rating:5,
-      text:"Very comfortable and looks beautiful in my living room.",
-      location:"Lagos"
-    },
+async function loadSupabaseReviewsForProduct(productId){
+  if(!window.DOWA_SUPABASE){
+    supabaseReviewsByProduct[productId] = [];
+    return [];
+  }
 
-    {
-      name:"Tunde",
-      rating:5,
-      text:"The L-shape is spacious and the finishing is excellent.",
-      location:"Abuja"
-    },
+  try{
+    const { data: rows, error } =
+      await window.DOWA_SUPABASE
+        .from("reviews")
+        .select("id, product_id, customer_id, rating, review_text, created_at")
+        .eq("product_id", Number(productId))
+        .eq("status", "approved")
+        .order("created_at", { ascending:false });
 
-    {
-      name:"Chioma",
-      rating:4,
-      text:"Lovely sofa. Delivery was smooth and the sofa looks exactly like the pictures.",
-      location:"Lagos"
+    if(error) throw error;
+
+    const reviewRows = rows || [];
+    const customerIds = [...new Set(
+      reviewRows
+        .map(row=>row.customer_id)
+        .filter(Boolean)
+    )];
+
+    let customerMap = {};
+
+    if(customerIds.length){
+      const { data: customers, error: customerError } =
+        await window.DOWA_SUPABASE
+          .from("customers")
+          .select("id, full_name")
+          .in("id", customerIds);
+
+      if(customerError) throw customerError;
+
+      customerMap = Object.fromEntries(
+        (customers || []).map(customer=>[
+          Number(customer.id),
+          customer.full_name || "DOWA Customer"
+        ])
+      );
     }
-  ],
 
-  2:[
-    {
-      name:"David",
-      rating:5,
-      text:"The sofa is very comfortable and the fabric feels premium.",
-      location:"Lagos"
-    },
+    const reviews = reviewRows.map(row=>({
+      id: row.id,
+      name: customerMap[Number(row.customer_id)] || "DOWA Customer",
+      rating: Number(row.rating) || 0,
+      text: row.review_text || "",
+      location: ""
+    }));
 
-    {
-      name:"Mariam",
-      rating:5,
-      text:"Beautiful sofa and very good finishing.",
-      location:"Abuja"
-    }
-  ],
+    supabaseReviewsByProduct[productId] = reviews;
+    productReviews[productId] = reviews;
+    return reviews;
+  }catch(error){
+    console.error("Supabase reviews load failed:", error);
+    supabaseReviewsByProduct[productId] = [];
+    productReviews[productId] = [];
+    return [];
+  }
+}
 
-  3:[
-    {
-      name:"Daniel",
-      rating:5,
-      text:"The modular design works perfectly in our living room.",
-      location:"Lagos"
-    },
+function getProductReviewSummary(product){
+  const reviews = supabaseReviewsByProduct[product.id] || [];
 
-    {
-      name:"Sarah",
-      rating:5,
-      text:"Spacious, comfortable and very elegant.",
-      location:"Port Harcourt"
-    }
-  ],
+  if(!reviews.length){
+    return {
+      rating: 0,
+      count: 0
+    };
+  }
 
-  4:[
-    {
-      name:"Blessing",
-      rating:5,
-      text:"Perfect for my apartment. Very comfortable.",
-      location:"Lagos"
-    },
+  const average = reviews.reduce((sum, review)=>
+    sum + Number(review.rating || 0), 0
+  ) / reviews.length;
 
-    {
-      name:"Michael",
-      rating:4,
-      text:"Good quality and beautiful design.",
-      location:"Ibadan"
-    }
-  ]
+  return {
+    rating: Math.round(average * 10) / 10,
+    count: reviews.length
+  };
+}
 
-};
 
 
 /* ==========================================
@@ -4799,30 +4867,611 @@ const productReviews = {
 
 let currentProduct = null;
 
-let cart =
-  JSON.parse(
-    localStorage.getItem("dowaCart")
-  ) || [];
+/* ==========================================
+   PRIVATE CUSTOMER STATE
+   Every account gets its own browser cache key.
+   Supabase Auth + RLS remain the real security layer.
+========================================== */
+let cart = [];
+let wishlist = [];
+let orders = [];
+let privateUserId = null;
 
-let currentUser =
-  JSON.parse(
-    localStorage.getItem("dowaUser")
-  ) || null;
+function privateStorageKey(base){
+  return `${base}_${privateUserId || "guest"}`;
+}
 
-let users =
-  JSON.parse(
-    localStorage.getItem("dowaUsers")
-  ) || [];
+function readPrivateState(base, fallback){
+  try{
+    const raw = localStorage.getItem(privateStorageKey(base));
+    return raw === null ? fallback : JSON.parse(raw);
+  }catch(e){
+    return fallback;
+  }
+}
 
-let wishlist =
-  JSON.parse(
-    localStorage.getItem("dowaWishlist")
-  ) || [];
+function writePrivateState(base, value){
+  if(!privateUserId) return;
+  localStorage.setItem(privateStorageKey(base), JSON.stringify(value));
+}
 
-let orders =
-  JSON.parse(
-    localStorage.getItem("dowaOrders")
-  ) || [];
+function clearPrivateState(){
+  cart = [];
+  wishlist = [];
+  orders = [];
+  privateUserId = null;
+}
+
+function loadPrivateState(userId){
+  privateUserId = userId ? String(userId) : null;
+  if(!privateUserId){
+    cart = [];
+    wishlist = [];
+    orders = [];
+    return;
+  }
+  cart = readPrivateState("dowaCart", []);
+  wishlist = readPrivateState("dowaWishlist", []);
+  orders = readPrivateState("dowaOrders", []);
+} 
+
+function savePrivateUserCache(){
+  if(!currentUser || !privateUserId) return;
+  localStorage.setItem(
+    privateStorageKey("dowaUser"),
+    JSON.stringify(currentUser)
+  );
+}
+
+let currentUser = null;
+
+
+async function loadSupabaseWishlistForCurrentUser(){
+
+  if(!currentUser || !window.DOWA_SUPABASE){
+    wishlist = [];
+    updateMobileBottomNav();
+    return;
+  }
+
+  try{
+
+    const authUserId = currentUser.auth_user_id || currentUser.id;
+
+    const { data: customer, error: customerError } =
+      await window.DOWA_SUPABASE
+        .from("customers")
+        .select("id")
+        .eq("auth_user_id", authUserId)
+        .maybeSingle();
+
+    if(customerError){
+      console.error("Customer lookup for wishlist failed:", customerError);
+      wishlist = [];
+      updateMobileBottomNav();
+      return;
+    }
+
+    if(!customer){
+      console.warn("No DOWA customer record found for this account.");
+      wishlist = [];
+      updateMobileBottomNav();
+      return;
+    }
+
+    currentUser.customer_id = customer.id;
+
+    let { data: wishlistRow, error: wishlistError } =
+      await window.DOWA_SUPABASE
+        .from("wishlists")
+        .select("id")
+        .eq("customer_id", customer.id)
+        .limit(1)
+        .maybeSingle();
+
+    if(wishlistError){
+      console.error("Wishlist lookup failed:", wishlistError);
+      wishlist = [];
+      updateMobileBottomNav();
+      return;
+    }
+
+    if(!wishlistRow){
+
+      const { data: createdWishlist, error: createError } =
+        await window.DOWA_SUPABASE
+          .from("wishlists")
+          .insert({ customer_id: customer.id })
+          .select("id")
+          .single();
+
+      if(createError){
+        console.error("Wishlist creation failed:", createError);
+        wishlist = [];
+        updateMobileBottomNav();
+        return;
+      }
+
+      wishlistRow = createdWishlist;
+    }
+
+    currentUser.wishlist_id = wishlistRow.id;
+
+    const { data: items, error: itemsError } =
+      await window.DOWA_SUPABASE
+        .from("wishlist_items")
+        .select("product_id")
+        .eq("wishlist_id", wishlistRow.id);
+
+    if(itemsError){
+      console.error("Wishlist items lookup failed:", itemsError);
+      wishlist = [];
+      updateMobileBottomNav();
+      return;
+    }
+
+    wishlist = (items || [])
+      .map(item => Number(item.product_id))
+      .filter(Number.isFinite);
+
+    savePrivateUserCache();
+    updateMobileBottomNav();
+
+    console.log("DOWA Supabase wishlist loaded.");
+
+  }catch(error){
+    console.error("Unexpected wishlist load error:", error);
+    wishlist = [];
+    updateMobileBottomNav();
+  }
+
+}
+
+
+/* ==========================================
+   SUPABASE CUSTOMER ADDRESSES
+========================================== */
+
+async function loadSupabaseAddressesForCurrentUser(){
+
+  if(!currentUser || !window.DOWA_SUPABASE){
+    if(currentUser) currentUser.addresses=[];
+    return;
+  }
+
+  try{
+
+    let customerId = currentUser.customer_id || null;
+
+    if(!customerId){
+      const { data: customer, error: customerError } =
+        await window.DOWA_SUPABASE
+          .from("customers")
+          .select("id")
+          .eq("auth_user_id", currentUser.auth_user_id || currentUser.id)
+          .maybeSingle();
+
+      if(customerError){
+        console.error("Customer lookup for addresses failed:", customerError);
+        currentUser.addresses=[];
+        return;
+      }
+
+      if(!customer){
+        console.warn("No DOWA customer record found for this account.");
+        currentUser.addresses=[];
+        return;
+      }
+
+      customerId = customer.id;
+      currentUser.customer_id = customerId;
+    }
+
+    const { data: rows, error } =
+      await window.DOWA_SUPABASE
+        .from("customer_addresses")
+        .select("id,created_at,label,recipient_name,phone,address_line,country,is_default")
+        .eq("customer_id", customerId)
+        .order("is_default", { ascending:false })
+        .order("created_at", { ascending:true });
+
+    if(error){
+      console.error("Customer addresses load failed:", error);
+      currentUser.addresses=[];
+      return;
+    }
+
+    currentUser.addresses = (rows || []).map(address => ({
+      id: address.id,
+      fullName: address.recipient_name || currentUser.name || "",
+      phone: address.phone || currentUser.phone || "",
+      state: "",
+      city: "",
+      street: address.address_line || "",
+      landmark: "",
+      label: address.label || "",
+      country: address.country || "Nigeria",
+      isDefault: !!address.is_default
+    }));
+
+    const defaultAddress = currentUser.addresses.find(address => address.isDefault);
+
+    if(defaultAddress){
+      currentUser.address = defaultAddress.street || "";
+    }
+
+    if(selectedDeliveryAddress){
+      selectedDeliveryAddress =
+        currentUser.addresses.find(address => Number(address.id) === Number(selectedDeliveryAddress.id))
+        || defaultAddress
+        || currentUser.addresses[0]
+        || null;
+    }else{
+      selectedDeliveryAddress = defaultAddress || currentUser.addresses[0] || null;
+    }
+
+    localStorage.setItem("dowaUser", JSON.stringify(currentUser));
+
+    console.log("DOWA Supabase customer addresses loaded.");
+
+  }catch(error){
+    console.error("Unexpected customer addresses load error:", error);
+    currentUser.addresses=[];
+  }
+
+}
+
+
+/* ==========================================
+   SUPABASE CART
+========================================== */
+
+async function loadSupabaseCartForCurrentUser(){
+
+  if(!currentUser || !window.DOWA_SUPABASE){
+    return;
+  }
+
+  try{
+
+    const authUserId = currentUser.auth_user_id || currentUser.id;
+
+    const { data: customer, error: customerError } =
+      await window.DOWA_SUPABASE
+        .from("customers")
+        .select("id")
+        .eq("auth_user_id", authUserId)
+        .maybeSingle();
+
+    if(customerError){
+      console.error("Customer lookup for cart failed:", customerError);
+      return;
+    }
+
+    if(!customer){
+      console.warn("No DOWA customer record found for cart.");
+      return;
+    }
+
+    currentUser.customer_id = customer.id;
+
+    const { data: rows, error: cartError } =
+      await window.DOWA_SUPABASE
+        .from("cart_items")
+        .select("id, product_id, quantity, size, color")
+        .eq("customer_id", customer.id)
+        .order("created_at", { ascending:true });
+
+    if(cartError){
+      console.error("Supabase cart load failed:", cartError);
+      return;
+    }
+
+    cart = (rows || []).map(row=>{
+      const product = products.find(p=>Number(p.id) === Number(row.product_id));
+
+      return {
+        id: row.id,
+        productId: Number(row.product_id),
+        name: product?.name || "DOWA Product",
+        price: product?.price || 0,
+        quantity: Number(row.quantity) || 1,
+        size: row.size || null,
+        color: row.color || null
+      };
+    });
+
+    updateCartCount();
+
+    console.log("DOWA Supabase cart loaded.");
+
+  }catch(error){
+
+    console.error("Unexpected Supabase cart load error:", error);
+
+  }
+
+}
+
+async function persistSupabaseCartForCurrentUser(){
+
+  if(!currentUser || !window.DOWA_SUPABASE){
+    return;
+  }
+
+  try{
+
+    const authUserId = currentUser.auth_user_id || currentUser.id;
+
+    const { data: customer, error: customerError } =
+      await window.DOWA_SUPABASE
+        .from("customers")
+        .select("id")
+        .eq("auth_user_id", authUserId)
+        .maybeSingle();
+
+    if(customerError || !customer){
+      console.error("Customer lookup for cart save failed:", customerError);
+      return;
+    }
+
+    currentUser.customer_id = customer.id;
+
+    const { error: deleteError } =
+      await window.DOWA_SUPABASE
+        .from("cart_items")
+        .delete()
+        .eq("customer_id", customer.id);
+
+    if(deleteError){
+      console.error("Supabase cart clear before save failed:", deleteError);
+      return;
+    }
+
+    if(!cart.length){
+      return;
+    }
+
+    const payload = cart.map(item=>({
+      customer_id: customer.id,
+      product_id: Number(item.productId),
+      quantity: Number(item.quantity) || 1,
+      size: item.size || null,
+      color: item.color || null
+    }));
+
+    const { data: inserted, error: insertError } =
+      await window.DOWA_SUPABASE
+        .from("cart_items")
+        .insert(payload)
+        .select("id, product_id, quantity, size, color");
+
+    if(insertError){
+      console.error("Supabase cart save failed:", insertError);
+      return;
+    }
+
+    if(inserted){
+      cart = inserted.map(row=>{
+        const product = products.find(p=>Number(p.id) === Number(row.product_id));
+        return {
+          id: row.id,
+          productId: Number(row.product_id),
+          name: product?.name || "DOWA Product",
+          price: product?.price || 0,
+          quantity: Number(row.quantity) || 1,
+          size: row.size || null,
+          color: row.color || null
+        };
+      });
+    }
+
+  }catch(error){
+
+    console.error("Unexpected Supabase cart save error:", error);
+
+  }
+
+}
+
+async function clearSupabaseCartForCurrentUser(){
+
+  if(!currentUser || !window.DOWA_SUPABASE){
+    return;
+  }
+
+  try{
+
+    const authUserId = currentUser.auth_user_id || currentUser.id;
+
+    const { data: customer, error: customerError } =
+      await window.DOWA_SUPABASE
+        .from("customers")
+        .select("id")
+        .eq("auth_user_id", authUserId)
+        .maybeSingle();
+
+    if(customerError || !customer){
+      console.error("Customer lookup for cart clear failed:", customerError);
+      return;
+    }
+
+    const { error } =
+      await window.DOWA_SUPABASE
+        .from("cart_items")
+        .delete()
+        .eq("customer_id", customer.id);
+
+    if(error){
+      console.error("Supabase cart clear failed:", error);
+    }
+
+  }catch(error){
+
+    console.error("Unexpected Supabase cart clear error:", error);
+
+  }
+
+}
+
+
+/* ==========================================
+   RESTORE SUPABASE SESSION
+========================================== */
+
+async function restoreSupabaseSession(){
+
+  try{
+
+    const {
+      data,
+      error
+    } =
+      await window.DOWA_SUPABASE.auth.getSession();
+
+
+    if(error){
+
+      console.error(
+        "Supabase session error:",
+        error
+      );
+
+      return;
+
+    }
+
+
+    const session =
+      data.session;
+
+
+    if(!session || !session.user){
+
+      currentUser = null;
+
+      return;
+
+    }
+
+
+    const user =
+      session.user;
+
+
+    currentUser = {
+
+      id: user.id,
+
+      auth_user_id: user.id,
+
+      name:
+        user.user_metadata?.full_name
+        || "",
+
+      email:
+        user.email
+        || "",
+
+      phone:
+        user.user_metadata?.phone
+        || "",
+
+      address:
+        user.user_metadata?.address
+        || "",
+
+      verified:
+        !!user.email_confirmed_at
+
+    };
+
+
+    loadPrivateState(currentUser.id);
+    await loadSupabaseWishlistForCurrentUser();
+    await loadSupabaseAddressesForCurrentUser();
+    await loadSupabaseCartForCurrentUser();
+
+
+    console.log(
+      "DOWA Supabase session restored."
+    );
+
+
+  }catch(error){
+
+    console.error(
+      "Unable to restore Supabase session:",
+      error
+    );
+
+  }
+
+}
+
+
+/*
+  Keep currentUser synchronized whenever
+  Supabase signs the customer in or out.
+*/
+
+window.DOWA_SUPABASE.auth.onAuthStateChange(
+  async (event, session)=>{
+
+    if(session && session.user){
+
+      const user =
+        session.user;
+
+
+      currentUser = {
+
+        id: user.id,
+
+        auth_user_id: user.id,
+
+        name:
+          user.user_metadata?.full_name
+          || "",
+
+        email:
+          user.email
+          || "",
+
+        phone:
+          user.user_metadata?.phone
+          || "",
+
+        address:
+          user.user_metadata?.address
+          || "",
+
+        verified:
+          !!user.email_confirmed_at
+
+      };
+
+
+      loadPrivateState(currentUser.id);
+      await loadSupabaseWishlistForCurrentUser();
+      await loadSupabaseAddressesForCurrentUser();
+
+
+    }else{
+
+      currentUser = null;
+
+      clearPrivateState();
+
+    }
+
+  }
+);
+
+
+restoreSupabaseSession();
+
+let users = [];
 
 let selectedSize = "3-Seater";
 
@@ -5299,7 +5948,7 @@ function filterCategory(category){
    PRODUCT
 ========================================== */
 
-function openProduct(id){
+async function openProduct(id){
 
   const product =
     products.find(
@@ -5331,6 +5980,8 @@ function openProduct(id){
   showPage("product");
 
   renderProductDetail();
+  await loadSupabaseReviewsForProduct(product.id);
+  renderProductDetail();
 
 }
 
@@ -5343,7 +5994,10 @@ function renderProductDetail(){
     currentProduct;
 
   const reviews =
-    productReviews[product.id] || [];
+    supabaseReviewsByProduct[product.id] || [];
+
+  const reviewSummary =
+    getProductReviewSummary(product);
 
 
   const colors = [
@@ -5433,9 +6087,9 @@ function renderProductDetail(){
             </span>
 
             <span>
-              ${product.rating}
+              ${reviewSummary.count ? reviewSummary.rating : "—"}
               ·
-              ${product.reviews}
+              ${reviewSummary.count}
               reviews
             </span>
 
@@ -5721,15 +6375,15 @@ function renderProductDetail(){
           <div class="review-summary-box">
 
             <div class="big-rating">
-              ${product.rating}
+              ${reviewSummary.count ? reviewSummary.rating : "—"}
             </div>
 
             <div class="stars">
-              ${stars(product.rating)}
+              ${reviewSummary.count ? stars(reviewSummary.rating) : ""}
             </div>
 
             <small>
-              ${product.reviews} reviews
+              ${reviewSummary.count} reviews
             </small>
 
           </div>
@@ -5759,9 +6413,7 @@ function renderProductDetail(){
                     “${review.text}”
                   </p>
 
-                  <small>
-                    ${review.location}
-                  </small>
+                  ${review.location ? `<small>${escapeHtml(review.location)}</small>` : ""}
 
                 </div>
 
@@ -5777,10 +6429,122 @@ function renderProductDetail(){
 
         </div>
 
+
+        <div class="review-submit-area">
+
+          <button
+            class="btn btn-outline-dark"
+            type="button"
+            onclick="openReviewForm()"
+          >
+            Write a Review
+          </button>
+
+          <div id="reviewFormWrap" style="display:none;margin-top:20px;">
+
+            <div class="account-form">
+
+              <div class="account-form-group">
+                <label for="reviewRating">Rating</label>
+                <select id="reviewRating" class="filter-select">
+                  <option value="5">5 — Excellent</option>
+                  <option value="4">4 — Very Good</option>
+                  <option value="3">3 — Good</option>
+                  <option value="2">2 — Fair</option>
+                  <option value="1">1 — Poor</option>
+                </select>
+              </div>
+
+              <div class="account-form-group">
+                <label for="reviewText">Your Review</label>
+                <textarea id="reviewText" rows="5" placeholder="Tell us about your experience with this product..."></textarea>
+              </div>
+
+              <div class="account-hub-actions">
+                <button class="btn btn-dark" type="button" onclick="submitProductReview()">Submit Review</button>
+                <button class="btn btn-outline-dark" type="button" onclick="closeReviewForm()">Cancel</button>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
       </div>
 
     `;
 
+}
+
+
+async function openReviewForm(){
+  if(!currentUser){
+    showToast("Please sign in to write a review.");
+    showPage("auth");
+    return;
+  }
+
+  const wrap = document.getElementById("reviewFormWrap");
+  if(wrap) wrap.style.display = "block";
+}
+
+function closeReviewForm(){
+  const wrap = document.getElementById("reviewFormWrap");
+  if(wrap) wrap.style.display = "none";
+}
+
+async function submitProductReview(){
+  if(!currentUser || !currentProduct || !window.DOWA_SUPABASE){
+    showToast("Please sign in to write a review.");
+    return;
+  }
+
+  const rating = Number(document.getElementById("reviewRating")?.value || 0);
+  const reviewText = document.getElementById("reviewText")?.value.trim() || "";
+
+  if(rating < 1 || rating > 5){
+    showToast("Please choose a rating.");
+    return;
+  }
+
+  if(!reviewText){
+    showToast("Please write your review.");
+    return;
+  }
+
+  try{
+    const customerId = await getSupabaseCustomerId();
+
+    if(!customerId){
+      showToast("Your customer account could not be found.");
+      return;
+    }
+
+    const { error } = await window.DOWA_SUPABASE
+      .from("reviews")
+      .insert({
+        product_id: Number(currentProduct.id),
+        customer_id: Number(customerId),
+        rating,
+        review_text: reviewText,
+        status: "pending"
+      });
+
+    if(error){
+      console.error("Supabase review submission failed:", error);
+      showToast("Unable to submit your review. Please try again.");
+      return;
+    }
+
+    document.getElementById("reviewText").value = "";
+    document.getElementById("reviewRating").value = "5";
+    closeReviewForm();
+    showToast("Review submitted. It will appear after approval.");
+  }catch(error){
+    console.error("Unexpected review submission error:", error);
+    showToast("Unable to submit your review. Please try again.");
+  }
 }
 
 
@@ -6081,10 +6845,11 @@ function addToCartWithoutDrawer(
   }
 
 
-  localStorage.setItem(
-    "dowaCart",
-    JSON.stringify(cart)
-  );
+  if(currentUser){
+    persistSupabaseCartForCurrentUser();
+  }else{
+    writePrivateState("dowaCart", cart);
+  }
 
 }
 
@@ -6330,7 +7095,7 @@ function checkoutFromCart(){
    BUY NOW
 ========================================== */
 
-function buyCurrentProduct(){
+async function buyCurrentProduct(){
 
   if(!currentProduct)
     return;
@@ -6341,6 +7106,9 @@ function buyCurrentProduct(){
 
   cart=[];
 
+  if(currentUser){
+    await clearSupabaseCartForCurrentUser();
+  }
 
   addToCartWithoutDrawer(
 
@@ -6504,7 +7272,7 @@ function togglePassword(
    CREATE ACCOUNT
 ========================================== */
 
-function createAccount(){
+async function createAccount(){
 
   const name =
     document.getElementById(
@@ -6561,7 +7329,7 @@ function createAccount(){
   }
 
 
-  if(password!==confirm){
+  if(password !== confirm){
 
     showToast(
       "Passwords do not match."
@@ -6572,14 +7340,10 @@ function createAccount(){
   }
 
 
-  if(
-    users.some(
-      user=>user.email===email
-    )
-  ){
+  if(password.length < 6){
 
     showToast(
-      "An account with this email already exists."
+      "Password must be at least 6 characters."
     );
 
     return;
@@ -6587,266 +7351,237 @@ function createAccount(){
   }
 
 
-  generatedOtp =
-    Math.floor(
-      100000 +
-      Math.random()*900000
-    )
-    .toString();
+  try{
+
+    const {
+      data,
+      error
+    } =
+      await window.DOWA_SUPABASE.auth.signUp({
+
+        email: email,
+
+        password: password,
+
+        options: {
+
+          data: {
+
+            full_name: name,
+
+            phone: phone,
+
+            address: address
+
+          }
+
+        }
+
+      });
 
 
-  const user = {
+    if(error){
 
-    id:Date.now(),
+      console.error(
+        "Supabase signup error:",
+        error
+      );
 
-    name,
+      showToast(
+        error.message
+      );
 
-    email,
+      return;
 
-    phone,
-
-    password,
-
-    verified:false,
-
-    address,
-
-    addresses:[
-
-      {
-
-        id:Date.now(),
-
-        fullName:name,
-
-        phone,
-
-        state:"",
-
-        city:"",
-
-        street:address,
-
-        landmark:""
-
-      }
-
-    ]
-
-  };
+    }
 
 
-  users.push(user);
+    /*
+      Supabase created the account successfully.
+
+      The database trigger we created earlier
+      automatically creates the customer profile
+      and primary address.
+    */
 
 
-  localStorage.setItem(
-    "dowaUsers",
-    JSON.stringify(users)
-  );
+    if(data.session){
+
+      currentUser = {
+
+        id: data.user.id,
+
+        auth_user_id: data.user.id,
+
+        name: name,
+
+        email: email,
+
+        phone: phone,
+
+        address: address,
+
+        verified: true
+
+      };
 
 
-  document.getElementById(
-    "demoOtp"
-  ).textContent =
-    generatedOtp;
+      savePrivateUserCache();
+      loadPrivateState(currentUser.id);
+      await loadSupabaseWishlistForCurrentUser();
+      await loadSupabaseAddressesForCurrentUser();
 
 
-  document.getElementById(
-    "loginForm"
-  ).style.display =
-    "none";
+      showToast(
+        "Account created successfully."
+      );
 
 
-  document.getElementById(
-    "signupForm"
-  ).style.display =
-    "none";
+      setTimeout(()=>{
+
+        showPage("home");
+
+      },700);
 
 
-  document.getElementById(
-    "otpForm"
-  ).style.display =
-    "block";
+      return;
+
+    }
+
+
+    /*
+      If email confirmation is enabled,
+      Supabase creates the account but does
+      not immediately create a session.
+    */
+
+    showToast(
+      "Account created. Please check your email to verify your account."
+    );
+
+
+    document.getElementById(
+      "loginForm"
+    ).style.display = "block";
+
+
+    document.getElementById(
+      "signupForm"
+    ).style.display = "none";
+
+
+    document.getElementById(
+      "otpForm"
+    ).style.display = "none";
+
+
+    document.getElementById(
+      "loginEmail"
+    ).value = email;
+
+
+  }catch(error){
+
+    console.error(
+      "Unexpected signup error:",
+      error
+    );
+
+    showToast(
+      "Something went wrong. Please try again."
+    );
+
+  }
 
 }
-
+ 
+  
 
 function verifyOtp(){
-
-  const input =
-    document.getElementById(
-      "otpInput"
-    ).value.trim();
-
-
-  if(input!==generatedOtp){
-
-    showToast(
-      "Incorrect OTP."
-    );
-
-    return;
-
-  }
-
-
-  const email =
-    document.getElementById(
-      "signupEmail"
-    ).value
-    .trim()
-    .toLowerCase();
-
-
-  const user =
-    users.find(
-      u=>u.email===email
-    );
-
-
-  if(user){
-
-    user.verified=true;
-
-    currentUser =
-      user;
-
-
-    localStorage.setItem(
-      "dowaUsers",
-      JSON.stringify(users)
-    );
-
-
-    localStorage.setItem(
-      "dowaUser",
-      JSON.stringify(user)
-    );
-
-  }
-
-
-  showToast(
-    "Account verified."
-  );
-
-
-  setTimeout(()=>{
-
-    showPage("account");
-
-  },700);
-
+  showToast("Email verification is handled by Supabase. Please use the verification link sent to your email.");
 }
 
 
 function resendOtp(){
-
-  generatedOtp =
-    Math.floor(
-      100000 +
-      Math.random()*900000
-    )
-    .toString();
-
-
-  document.getElementById(
-    "demoOtp"
-  ).textContent =
-    generatedOtp;
-
-
-  showToast(
-    "New demo OTP generated."
-  );
-
+  showToast("Please use the email verification link sent by Supabase.");
 }
 
 
-function login(){
+async function login(){
 
-  const email =
-    document.getElementById(
-      "loginEmail"
-    ).value
-    .trim()
-    .toLowerCase();
+  const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+  const password = document.getElementById("loginPassword").value;
 
-
-  const password =
-    document.getElementById(
-      "loginPassword"
-    ).value;
-
-
-  const user =
-    users.find(
-      u=>
-        u.email===email &&
-        u.password===password
-    );
-
-
-  if(!user){
-
-    showToast(
-      "Invalid email or password."
-    );
-
+  if(!email || !password){
+    showToast("Please enter your email and password.");
     return;
-
   }
 
+  try{
+    const { data, error } = await window.DOWA_SUPABASE.auth.signInWithPassword({ email, password });
 
-  if(!user.verified){
+    if(error){
+      console.error("Supabase login error:", error);
 
-    showToast(
-      "Please verify your account first."
-    );
+      if(error.code === "invalid_credentials" || error.message?.toLowerCase().includes("invalid login credentials")){
+        showToast("Invalid email or password. If you created this account before Supabase Auth was connected, please create the account again or reset the password.");
+      }else if(error.message?.toLowerCase().includes("email not confirmed")){
+        showToast("Please verify your email before signing in.");
+      }else{
+        showToast(error.message || "Unable to sign in.");
+      }
+      return;
+    }
 
-    return;
+    if(!data.user){
+      showToast("Unable to sign in. Please try again.");
+      return;
+    }
 
+    const user = data.user;
+    currentUser = {
+      id:user.id,
+      auth_user_id:user.id,
+      name:user.user_metadata?.full_name || "",
+      email:user.email || email,
+      phone:user.user_metadata?.phone || "",
+      address:user.user_metadata?.address || "",
+      verified:!!user.email_confirmed_at
+    };
+
+    loadPrivateState(user.id);
+    await loadSupabaseWishlistForCurrentUser();
+    await loadSupabaseAddressesForCurrentUser();
+    await loadSupabaseCartForCurrentUser();
+
+    showToast("Welcome back.");
+    setTimeout(()=>showPage("home"),700);
+
+  }catch(error){
+    console.error("Unexpected login error:", error);
+    showToast("Something went wrong. Please try again.");
   }
-
-
-  currentUser =
-    user;
-
-
-  localStorage.setItem(
-    "dowaUser",
-    JSON.stringify(user)
-  );
-
-
-  showToast(
-    "Welcome back."
-  );
-
-
-  showPage("home");
-
 }
 
 
-function logout(){
-
-  currentUser =
-    null;
-
-
-  localStorage.removeItem(
-    "dowaUser"
-  );
-
-
-  showToast(
-    "You have been signed out."
-  );
-
-
-  showPage("home");
-
+async function logout(){
+  try{
+    const { error } = await window.DOWA_SUPABASE.auth.signOut();
+    if(error){
+      console.error("Supabase logout error:", error);
+      showToast(error.message);
+      return;
+    }
+    currentUser = null;
+    clearPrivateState();
+    showToast("You have been signed out.");
+    showPage("home");
+    updateCartCount();
+    renderHome();
+  }catch(error){
+    console.error("Unexpected logout error:", error);
+    showToast("Something went wrong. Please try again.");
+  }
 }
 
 
@@ -6854,7 +7589,7 @@ function logout(){
    WISHLIST
 ========================================== */
 
-function toggleWishlist(id){
+async function toggleWishlist(id){
 
   if(!currentUser){
 
@@ -6868,50 +7603,88 @@ function toggleWishlist(id){
 
   }
 
-
-  if(wishlist.includes(id)){
-
-    wishlist =
-      wishlist.filter(
-        item=>item!==id
-      );
+  if(!currentUser.wishlist_id){
 
     showToast(
-      "Removed from wishlist."
+      "Your wishlist is still loading. Please try again."
     );
 
-  }else{
+    await loadSupabaseWishlistForCurrentUser();
 
-    wishlist.push(id);
-
-    showToast(
-      "Added to wishlist."
-    );
+    if(!currentUser.wishlist_id){
+      return;
+    }
 
   }
 
+  try{
 
-  localStorage.setItem(
-    "dowaWishlist",
-    JSON.stringify(wishlist)
-  );
+    const alreadySaved = wishlist.includes(id);
 
-  updateMobileBottomNav();
+    if(alreadySaved){
 
-  renderHome();
+      const { error } =
+        await window.DOWA_SUPABASE
+          .from("wishlist_items")
+          .delete()
+          .eq("wishlist_id", currentUser.wishlist_id)
+          .eq("product_id", id);
 
-  if(
-    document
-      .getElementById("accountPage")
-      ?.classList.contains("active")
-  ){
+      if(error){
+        console.error("Wishlist remove error:", error);
+        showToast("Unable to remove from wishlist.");
+        return;
+      }
 
-    openWishlist();
+      wishlist = wishlist.filter(item => item !== id);
+
+      showToast("Removed from wishlist.");
+
+    }else{
+
+      const { error } =
+        await window.DOWA_SUPABASE
+          .from("wishlist_items")
+          .insert({
+            wishlist_id: currentUser.wishlist_id,
+            product_id: id
+          });
+
+      if(error){
+        console.error("Wishlist add error:", error);
+        showToast("Unable to add to wishlist.");
+        return;
+      }
+
+      if(!wishlist.includes(id)){
+        wishlist.push(id);
+      }
+
+      showToast("Added to wishlist.");
+
+    }
+
+    updateMobileBottomNav();
+    renderHome();
+
+    if(
+      document
+        .getElementById("accountPage")
+        ?.classList.contains("active")
+    ){
+
+      openWishlist();
+
+    }
+
+  }catch(error){
+
+    console.error("Unexpected wishlist error:", error);
+    showToast("Something went wrong. Please try again.");
 
   }
 
 }
-
 
 function openWishlist(){
 
@@ -7482,28 +8255,170 @@ function renderEditProfile(){
   `;
 }
 
-function saveAccountProfile(event){
+async function saveAccountProfile(event){
   event.preventDefault();
-  if(!currentUser) return;
+  if(!currentUser || !window.DOWA_SUPABASE) return;
 
-  currentUser.name = document.getElementById("accountProfileName").value.trim();
-  currentUser.phone = document.getElementById("accountProfilePhone").value.trim();
-  currentUser.email = document.getElementById("accountProfileEmail").value.trim();
-  currentUser.profileImage =
+  const name = document.getElementById("accountProfileName").value.trim();
+  const phone = document.getElementById("accountProfilePhone").value.trim();
+  const email = document.getElementById("accountProfileEmail").value.trim().toLowerCase();
+  const profileImage =
     document.getElementById("accountProfilePhoto")?.value.trim() || "";
+  const primaryAddress =
+    document.getElementById("accountProfileAddress")?.value.trim() || "";
 
-  currentUser.address = document.getElementById("accountProfileAddress").value.trim();
+  if(!name || !phone || !email){
+    showToast("Please complete your profile details.");
+    return;
+  }
 
-  users = users.map(user => user.id === currentUser.id ? currentUser : user);
-  localStorage.setItem("dowaUsers", JSON.stringify(users));
-  localStorage.setItem("dowaUser", JSON.stringify(currentUser));
+  try{
 
-  renderAccount();
-  showToast("Profile updated.");
+    const authUserId = currentUser.auth_user_id || currentUser.id;
+
+    const { data: customer, error: customerLookupError } =
+      await window.DOWA_SUPABASE
+        .from("customers")
+        .select("id")
+        .eq("auth_user_id", authUserId)
+        .maybeSingle();
+
+    if(customerLookupError){
+      console.error("Customer profile lookup failed:", customerLookupError);
+      showToast("Unable to load your customer profile.");
+      return;
+    }
+
+    if(!customer){
+      showToast("Customer profile not found. Please sign in again.");
+      return;
+    }
+
+    const currentAuthEmail = (currentUser.email || "").trim().toLowerCase();
+
+    // Keep Supabase Auth metadata synchronized with the customer profile.
+    const authUpdate = {
+      data: {
+        full_name: name,
+        phone
+      }
+    };
+
+    if(email && email !== currentAuthEmail){
+      authUpdate.email = email;
+    }
+
+    const { data: authData, error: authError } =
+      await window.DOWA_SUPABASE.auth.updateUser(authUpdate);
+
+    if(authError){
+      console.error("Supabase Auth profile update failed:", authError);
+      showToast(authError.message || "Unable to update your profile.");
+      return;
+    }
+
+    const { error: customerUpdateError } =
+      await window.DOWA_SUPABASE
+        .from("customers")
+        .update({
+          full_name: name,
+          email: email,
+          phone: phone,
+          profile_image_url: profileImage,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", customer.id);
+
+    if(customerUpdateError){
+      console.error("Customer profile update failed:", customerUpdateError);
+      showToast("Your profile could not be saved.");
+      return;
+    }
+
+    // Keep the existing Primary Delivery Address field useful without
+    // creating a second private/localStorage address system.
+    if(primaryAddress){
+
+      const { data: defaultAddress, error: defaultLookupError } =
+        await window.DOWA_SUPABASE
+          .from("customer_addresses")
+          .select("id")
+          .eq("customer_id", customer.id)
+          .eq("is_default", true)
+          .maybeSingle();
+
+      if(defaultLookupError){
+        console.error("Default address lookup failed:", defaultLookupError);
+      }else if(defaultAddress){
+
+        const { error: addressUpdateError } =
+          await window.DOWA_SUPABASE
+            .from("customer_addresses")
+            .update({
+              recipient_name: name,
+              phone: phone,
+              address_line: primaryAddress
+            })
+            .eq("id", defaultAddress.id);
+
+        if(addressUpdateError){
+          console.error("Primary address update failed:", addressUpdateError);
+        }
+
+      }else{
+
+        const { error: addressInsertError } =
+          await window.DOWA_SUPABASE
+            .from("customer_addresses")
+            .insert({
+              customer_id: customer.id,
+              label: "Primary",
+              recipient_name: name,
+              phone: phone,
+              address_line: primaryAddress,
+              country: "Nigeria",
+              is_default: true
+            });
+
+        if(addressInsertError){
+          console.error("Primary address creation failed:", addressInsertError);
+        }
+      }
+    }
+
+    const updatedAuthUser = authData?.user;
+
+    currentUser.customer_id = customer.id;
+    currentUser.name = name;
+    currentUser.phone = phone;
+    currentUser.email = updatedAuthUser?.email || email;
+    currentUser.profileImage = profileImage;
+    currentUser.address = primaryAddress;
+    currentUser.verified = !!updatedAuthUser?.email_confirmed_at;
+
+    localStorage.setItem("dowaUser", JSON.stringify(currentUser));
+
+    await loadSupabaseAddressesForCurrentUser();
+
+    renderAccount();
+
+    if(email !== currentAuthEmail){
+      showToast("Profile updated. Check your email if DOWA asks you to confirm the new email address.");
+    }else{
+      showToast("Profile updated.");
+    }
+
+  }catch(error){
+    console.error("Unexpected profile update error:", error);
+    showToast("Something went wrong. Please try again.");
+  }
 }
 
-function renderAccountAddresses(){
+async function renderAccountAddresses(){
   if(!currentUser) return;
+
+  await loadSupabaseAddressesForCurrentUser();
+
   const addresses = currentUser.addresses || [];
 
   document.getElementById("accountPanel").innerHTML = `
@@ -7517,15 +8432,15 @@ function renderAccountAddresses(){
     </div>
 
     <div class="account-address-list">
-      ${addresses.length ? addresses.map((address,index)=>`
+      ${addresses.length ? addresses.map(address=>`
         <div class="account-address-card">
           <div>
-            <strong>${escapeHtml(address.fullName || currentUser.name || "Delivery address")}${index===0 ? " · Default" : ""}</strong>
+            <strong>${escapeHtml(address.fullName || currentUser.name || "Delivery address")}${address.isDefault ? " · Default" : ""}</strong>
             <p>${escapeHtml(address.phone || currentUser.phone || "")}</p>
             <p>${escapeHtml([address.street,address.city,address.state,address.landmark].filter(Boolean).join(", "))}</p>
           </div>
           <div class="account-address-actions">
-            ${index!==0 ? `<button class="account-mini-btn" type="button" onclick="setDefaultAccountAddress(${Number(address.id)})">Set Default</button>` : ""}
+            ${!address.isDefault ? `<button class="account-mini-btn" type="button" onclick="setDefaultAccountAddress(${Number(address.id)})">Set Default</button>` : ""}
             <button class="account-mini-btn" type="button" onclick="deleteAccountAddress(${Number(address.id)})">Delete</button>
           </div>
         </div>
@@ -7538,8 +8453,9 @@ function renderAccountAddresses(){
   `;
 }
 
-function addAccountAddress(){
+async function addAccountAddress(){
   if(!currentUser) return;
+
   const name = prompt("Full name for this delivery address:", currentUser.name || "");
   if(name === null) return;
   const phone = prompt("Phone number:", currentUser.phone || "");
@@ -7550,40 +8466,143 @@ function addAccountAddress(){
     showToast("Please complete the address.");
     return;
   }
+
   const city = prompt("City:", "") || "";
   const state = prompt("State:", "") || "";
   const landmark = prompt("Landmark (optional):", "") || "";
-  if(!currentUser.addresses) currentUser.addresses=[];
-  currentUser.addresses.push({id:Date.now(),fullName:name.trim(),phone:phone.trim(),street:street.trim(),city:city.trim(),state:state.trim(),landmark:landmark.trim()});
-  users = users.map(user=>user.id===currentUser.id?currentUser:user);
-  localStorage.setItem("dowaUsers",JSON.stringify(users));
-  localStorage.setItem("dowaUser",JSON.stringify(currentUser));
+
+  if(!currentUser.customer_id){
+    await loadSupabaseAddressesForCurrentUser();
+  }
+
+  if(!currentUser.customer_id){
+    showToast("Unable to identify your customer account.");
+    return;
+  }
+
+  const addressLine = [street.trim(), city.trim(), state.trim(), landmark.trim()]
+    .filter(Boolean)
+    .join(", ");
+
+  const { data, error } =
+    await window.DOWA_SUPABASE
+      .from("customer_addresses")
+      .insert({
+        customer_id: currentUser.customer_id,
+        label: "Delivery",
+        recipient_name: name.trim(),
+        phone: phone.trim(),
+        address_line: addressLine,
+        country: "Nigeria",
+        is_default: !(currentUser.addresses || []).length
+      })
+      .select("id,created_at,label,recipient_name,phone,address_line,country,is_default")
+      .single();
+
+  if(error){
+    console.error("Add customer address failed:", error);
+    showToast(error.message || "Unable to save delivery address.");
+    return;
+  }
+
+  if(data.is_default){
+    selectedDeliveryAddress = {
+      id:data.id,
+      fullName:data.recipient_name,
+      phone:data.phone,
+      state:"",
+      city:"",
+      street:data.address_line,
+      landmark:"",
+      label:data.label || "Delivery",
+      country:data.country || "Nigeria",
+      isDefault:true
+    };
+  }
+
+  await loadSupabaseAddressesForCurrentUser();
   renderAccountAddresses();
   showToast("Delivery address added.");
 }
 
-function setDefaultAccountAddress(addressId){
-  if(!currentUser || !currentUser.addresses) return;
-  const index=currentUser.addresses.findIndex(address=>Number(address.id)===Number(addressId));
-  if(index<0) return;
-  const selected=currentUser.addresses.splice(index,1)[0];
-  currentUser.addresses.unshift(selected);
-  users=users.map(user=>user.id===currentUser.id?currentUser:user);
-  localStorage.setItem("dowaUsers",JSON.stringify(users));
-  localStorage.setItem("dowaUser",JSON.stringify(currentUser));
-  renderAccountAddresses();
-  showToast("Default delivery address updated.");
+async function setDefaultAccountAddress(addressId){
+  if(!currentUser || !currentUser.customer_id) return;
+
+  try{
+    const { error: clearError } =
+      await window.DOWA_SUPABASE
+        .from("customer_addresses")
+        .update({is_default:false})
+        .eq("customer_id", currentUser.customer_id);
+
+    if(clearError){
+      console.error("Clear default address failed:", clearError);
+      showToast("Unable to update your default address.");
+      return;
+    }
+
+    const { error } =
+      await window.DOWA_SUPABASE
+        .from("customer_addresses")
+        .update({is_default:true})
+        .eq("id", addressId)
+        .eq("customer_id", currentUser.customer_id);
+
+    if(error){
+      console.error("Set default address failed:", error);
+      showToast("Unable to update your default address.");
+      return;
+    }
+
+    await loadSupabaseAddressesForCurrentUser();
+    renderAccountAddresses();
+    showToast("Default delivery address updated.");
+
+  }catch(error){
+    console.error("Unexpected default address error:", error);
+    showToast("Something went wrong. Please try again.");
+  }
 }
 
-function deleteAccountAddress(addressId){
-  if(!currentUser || !currentUser.addresses) return;
-  currentUser.addresses=currentUser.addresses.filter(address=>Number(address.id)!==Number(addressId));
-  users=users.map(user=>user.id===currentUser.id?currentUser:user);
-  localStorage.setItem("dowaUsers",JSON.stringify(users));
-  localStorage.setItem("dowaUser",JSON.stringify(currentUser));
-  renderAccountAddresses();
-  showToast("Delivery address removed.");
+async function deleteAccountAddress(addressId){
+  if(!currentUser || !currentUser.customer_id) return;
+
+  const address = (currentUser.addresses || [])
+    .find(item => Number(item.id) === Number(addressId));
+
+  if(address?.isDefault && (currentUser.addresses || []).length > 1){
+    showToast("Set another address as default before deleting this one.");
+    return;
+  }
+
+  try{
+    const { error } =
+      await window.DOWA_SUPABASE
+        .from("customer_addresses")
+        .delete()
+        .eq("id", addressId)
+        .eq("customer_id", currentUser.customer_id);
+
+    if(error){
+      console.error("Delete customer address failed:", error);
+      showToast("Unable to remove delivery address.");
+      return;
+    }
+
+    if(selectedDeliveryAddress && Number(selectedDeliveryAddress.id) === Number(addressId)){
+      selectedDeliveryAddress = null;
+    }
+
+    await loadSupabaseAddressesForCurrentUser();
+    renderAccountAddresses();
+    showToast("Delivery address removed.");
+
+  }catch(error){
+    console.error("Unexpected delete address error:", error);
+    showToast("Something went wrong. Please try again.");
+  }
 }
+
 
 function renderAccountFaqs(){
   document.getElementById("accountPanel").innerHTML = `
@@ -7790,270 +8809,155 @@ function renderCheckout(){
 }
 
 
-function renderDeliveryAddresses(){
+async function renderDeliveryAddresses(){
 
-  const container =
-    document.getElementById(
-      "deliveryAddresses"
-    );
+  const container = document.getElementById("deliveryAddresses");
+  if(!container || !currentUser) return;
 
+  await loadSupabaseAddressesForCurrentUser();
 
-  let userAddresses =
-    currentUser.addresses ||
-    [];
+  let userAddresses = currentUser.addresses || [];
 
-
-  if(
-    !userAddresses.length &&
-    currentUser.address
-  ){
-
+  if(!userAddresses.length && currentUser.address){
     userAddresses=[{
-
-      id:Date.now(),
-
-      fullName:
-        currentUser.name,
-
-      phone:
-        currentUser.phone,
-
+      id:"legacy-primary",
+      fullName:currentUser.name,
+      phone:currentUser.phone,
       state:"",
-
       city:"",
-
-      street:
-        currentUser.address,
-
-      landmark:""
-
+      street:currentUser.address,
+      landmark:"",
+      isDefault:true
     }];
-
-
-    currentUser.addresses =
-      userAddresses;
-
   }
 
-
-  if(
-    !selectedDeliveryAddress &&
-    userAddresses.length
-  ){
-
-    selectedDeliveryAddress =
-      userAddresses[0];
-
+  if(!selectedDeliveryAddress && userAddresses.length){
+    selectedDeliveryAddress = userAddresses.find(address=>address.isDefault) || userAddresses[0];
   }
 
-
-  container.innerHTML =
-    userAddresses
-      .map(address=>`
-
-        <div
-          class="
-            address-card
-            ${
-              selectedDeliveryAddress?.id===
-              address.id
-              ? "selected"
-              : ""
-            }
-          "
-        >
-
+  container.innerHTML = userAddresses.length
+    ? userAddresses.map(address=>`
+        <div class="address-card ${selectedDeliveryAddress?.id===address.id ? "selected" : ""}">
           <input
             type="radio"
             name="deliveryAddress"
-            ${
-              selectedDeliveryAddress?.id===
-              address.id
-              ? "checked"
-              : ""
-            }
-            onchange="
-              selectDeliveryAddress(${address.id})
-            "
+            ${selectedDeliveryAddress?.id===address.id ? "checked" : ""}
+            onchange="selectDeliveryAddress(${JSON.stringify(address.id)})"
           >
-
-
           <div>
-
-            <strong>
-              ${address.fullName}
-            </strong>
-
-
-            <p style="
-              font-size:11px;
-              color:var(--muted);
-              margin-top:5px;
-            ">
-              ${address.phone}
+            <strong>${escapeHtml(address.fullName || currentUser.name || "Delivery address")}</strong>
+            <p style="font-size:11px;color:var(--muted);margin-top:5px;">
+              ${escapeHtml(address.phone || currentUser.phone || "")}
             </p>
-
-
-            <p style="
-              font-size:11px;
-              color:var(--muted);
-              margin-top:5px;
-            ">
-              ${address.street},
-              ${address.city || ""}
-              ${address.state || ""}
+            <p style="font-size:11px;color:var(--muted);margin-top:5px;">
+              ${escapeHtml([address.street,address.city,address.state,address.landmark].filter(Boolean).join(", "))}
             </p>
-
           </div>
-
         </div>
-
-      `)
-      .join("");
-
+      `).join("")
+    : `<div class="account-empty">No saved delivery address yet. Add a new address below.</div>`;
 }
-
 
 function selectDeliveryAddress(id){
-
-  const list =
-    currentUser.addresses ||
-    [];
-
-
-  selectedDeliveryAddress =
-    list.find(
-      address=>address.id===id
-    );
-
-
+  const list = currentUser.addresses || [];
+  selectedDeliveryAddress = list.find(address=>String(address.id)===String(id)) || null;
   renderDeliveryAddresses();
-
 }
-
 
 function showNewAddressForm(){
-
-  document.getElementById(
-    "newAddressForm"
-  ).style.display =
-    "block";
-
+  document.getElementById("newAddressForm").style.display = "block";
 }
 
-
-function saveNewAddress(){
+async function saveNewAddress(){
 
   const address={
-
-    id:Date.now(),
-
-    fullName:
-      document.getElementById(
-        "addressName"
-      ).value.trim(),
-
-    phone:
-      document.getElementById(
-        "addressPhone"
-      ).value.trim(),
-
-    state:
-      document.getElementById(
-        "addressState"
-      ).value.trim(),
-
-    city:
-      document.getElementById(
-        "addressCity"
-      ).value.trim(),
-
-    street:
-      document.getElementById(
-        "addressStreet"
-      ).value.trim(),
-
-    landmark:
-      document.getElementById(
-        "addressLandmark"
-      ).value.trim()
-
+    fullName:document.getElementById("addressName").value.trim(),
+    phone:document.getElementById("addressPhone").value.trim(),
+    state:document.getElementById("addressState").value.trim(),
+    city:document.getElementById("addressCity").value.trim(),
+    street:document.getElementById("addressStreet").value.trim(),
+    landmark:document.getElementById("addressLandmark").value.trim()
   };
 
-
-  if(
-    !address.fullName ||
-    !address.phone ||
-    !address.street
-  ){
-
-    showToast(
-      "Please complete the address."
-    );
-
+  if(!address.fullName || !address.phone || !address.street){
+    showToast("Please complete the address.");
     return;
-
   }
 
-
-  if(!currentUser.addresses){
-
-    currentUser.addresses=[];
-
+  if(!currentUser){
+    showToast("Please sign in before saving an address.");
+    return;
   }
 
-
-  if(
-    document.getElementById(
-      "saveAddress"
-    ).checked
-  ){
-
-    currentUser.addresses.push(
-      address
-    );
-
-
-    users =
-      users.map(
-        user=>
-          user.id===currentUser.id
-          ? currentUser
-          : user
-      );
-
-
-    localStorage.setItem(
-      "dowaUsers",
-      JSON.stringify(users)
-    );
-
-
-    localStorage.setItem(
-      "dowaUser",
-      JSON.stringify(currentUser)
-    );
-
+  if(!currentUser.customer_id){
+    await loadSupabaseAddressesForCurrentUser();
   }
 
+  if(!currentUser.customer_id){
+    showToast("Unable to identify your customer account.");
+    return;
+  }
 
-  selectedDeliveryAddress =
-    address;
+  const addressLine = [address.street,address.city,address.state,address.landmark]
+    .filter(Boolean)
+    .join(", ");
 
+  let savedAddress = null;
 
-  renderDeliveryAddresses();
+  if(document.getElementById("saveAddress").checked){
+    const { data, error } =
+      await window.DOWA_SUPABASE
+        .from("customer_addresses")
+        .insert({
+          customer_id:currentUser.customer_id,
+          label:"Delivery",
+          recipient_name:address.fullName,
+          phone:address.phone,
+          address_line:addressLine,
+          country:"Nigeria",
+          is_default:!(currentUser.addresses || []).length
+        })
+        .select("id,created_at,label,recipient_name,phone,address_line,country,is_default")
+        .single();
 
+    if(error){
+      console.error("Save checkout address failed:", error);
+      showToast(error.message || "Unable to save delivery address.");
+      return;
+    }
 
-  document.getElementById(
-    "newAddressForm"
-  ).style.display =
-    "none";
+    savedAddress={
+      id:data.id,
+      fullName:data.recipient_name,
+      phone:data.phone,
+      state:"",
+      city:"",
+      street:data.address_line,
+      landmark:"",
+      label:data.label || "Delivery",
+      country:data.country || "Nigeria",
+      isDefault:!!data.is_default
+    };
+  }else{
+    savedAddress={
+      id:"checkout-temp-"+Date.now(),
+      ...address,
+      isDefault:false
+    };
+  }
 
+  selectedDeliveryAddress = savedAddress;
 
-  showToast(
-    "Delivery address selected."
-  );
+  await loadSupabaseAddressesForCurrentUser();
 
+  if(!selectedDeliveryAddress || String(selectedDeliveryAddress.id).startsWith("checkout-temp-")){
+    selectedDeliveryAddress = savedAddress;
+  }
+
+  await renderDeliveryAddresses();
+
+  document.getElementById("newAddressForm").style.display = "none";
+  showToast("Delivery address selected.");
 }
 
 
@@ -8210,8 +9114,8 @@ function proceedToPayment(){
    DOWA WALLET + ORDER TRACKING
 ========================================== */
 
-const dowaWalletKey = "dowaWallet";
-const dowaWalletTransactionsKey = "dowaWalletTransactions";
+function dowaWalletKey(){ return privateStorageKey("dowaWallet"); }
+function dowaWalletTransactionsKey(){ return privateStorageKey("dowaWalletTransactions"); }
 
 const orderStatuses = [
   "Order Confirmed",
@@ -8222,17 +9126,17 @@ const orderStatuses = [
 ];
 
 function getWalletBalance(){
-  return Number(localStorage.getItem(dowaWalletKey) || 0);
+  return Number(localStorage.getItem(dowaWalletKey()) || 0);
 }
 
 function setWalletBalance(amount){
-  localStorage.setItem(dowaWalletKey, String(Math.max(0, Number(amount))));
+  localStorage.setItem(dowaWalletKey(), String(Math.max(0, Number(amount))));
 }
 
 function getWalletTransactions(){
   try{
     return JSON.parse(
-      localStorage.getItem(dowaWalletTransactionsKey) || "[]"
+      localStorage.getItem(dowaWalletTransactionsKey()) || "[]"
     );
   }catch(e){
     return [];
@@ -8241,7 +9145,7 @@ function getWalletTransactions(){
 
 function saveWalletTransactions(items){
   localStorage.setItem(
-    dowaWalletTransactionsKey,
+    dowaWalletTransactionsKey(),
     JSON.stringify(items)
   );
 }
@@ -8344,10 +9248,7 @@ function ensureDemoOrder(){
 
   orders.unshift(demoOrder);
 
-  localStorage.setItem(
-    "dowaOrders",
-    JSON.stringify(orders)
-  );
+  writePrivateState("dowaOrders", orders);
 }
 
 function getOrderStatusIndex(status){
@@ -8382,10 +9283,187 @@ function renderOrderTracker(order){
   `;
 }
 
-function renderOrders(){
+async function loadSupabaseOrdersForCurrentUser(){
+  if(!currentUser || !window.DOWA_SUPABASE) return;
+
+  try{
+    let customerId = currentUser.customer_id || null;
+
+    if(!customerId){
+      const { data: customer, error: customerError } =
+        await window.DOWA_SUPABASE
+          .from("customers")
+          .select("id")
+          .eq("auth_user_id", currentUser.auth_user_id || currentUser.id)
+          .maybeSingle();
+
+      if(customerError || !customer){
+        console.error("Customer lookup for orders failed:", customerError);
+        orders = [];
+        return;
+      }
+
+      customerId = customer.id;
+      currentUser.customer_id = customerId;
+    }
+
+    const { data: orderRows, error: orderError } =
+      await window.DOWA_SUPABASE
+        .from("orders")
+        .select("*")
+        .eq("customer_id", customerId)
+        .order("created_at", {ascending:false});
+
+    if(orderError){
+      console.error("Supabase orders load failed:", orderError);
+      orders = [];
+      return;
+    }
+
+    const loadedOrders = [];
+
+    for(const row of (orderRows || [])){
+      const { data: itemRows, error: itemError } =
+        await window.DOWA_SUPABASE
+          .from("order_items")
+          .select("*")
+          .eq("order_id", row.id);
+
+      if(itemError){
+        console.error("Supabase order items load failed:", itemError);
+      }
+
+      const items = (itemRows || []).map(item => ({
+        id: item.id,
+        productId: item.product_id,
+        name: item.product_name || item.name || "DOWA Product",
+        price: Number(item.unit_price ?? item.price ?? 0),
+        quantity: Number(item.quantity || 0),
+        size: item.size || null,
+        color: item.color || item.colour || null
+      }));
+
+      loadedOrders.push({
+        id: row.order_number || row.id,
+        dbId: row.id,
+        userId: currentUser.id,
+        date: row.created_at || new Date().toISOString(),
+        items,
+        total: Number(row.total ?? 0),
+        status: row.status || "Order Confirmed",
+        delivery: row.delivery_address || row.shipping_address || {
+          name: currentUser.name || "DOWA Customer",
+          phone: currentUser.phone || "",
+          address: currentUser.address || ""
+        },
+        termsAccepted: !!row.terms_accepted,
+        termsAcceptedAt: row.terms_accepted_at || null,
+        customerConfirmed: !!row.customer_confirmed,
+        isDemo: false
+      });
+    }
+
+    orders = loadedOrders;
+    console.log("DOWA Supabase orders loaded.");
+  }catch(error){
+    console.error("Unexpected Supabase orders load error:", error);
+    orders = [];
+  }
+}
+
+async function createSupabaseOrderFromCheckout(){
+  if(!currentUser || !currentCheckoutOrder || !window.DOWA_SUPABASE){
+    return null;
+  }
+
+  let customerId = currentUser.customer_id || null;
+
+  if(!customerId){
+    const { data: customer, error: customerError } =
+      await window.DOWA_SUPABASE
+        .from("customers")
+        .select("id")
+        .eq("auth_user_id", currentUser.auth_user_id || currentUser.id)
+        .maybeSingle();
+
+    if(customerError || !customer){
+      console.error("Customer lookup before order failed:", customerError);
+      throw customerError || new Error("Customer record not found.");
+    }
+
+    customerId = customer.id;
+    currentUser.customer_id = customerId;
+  }
+
+  const orderNumber = "DOWA-" + Date.now();
+  const delivery = currentCheckoutOrder.delivery || {};
+  const subtotal = Number(currentCheckoutOrder.total || 0);
+
+  const orderPayload = {
+    customer_id: customerId,
+    order_number: orderNumber,
+    status: "Order Confirmed",
+    subtotal,
+    total: subtotal,
+    terms_accepted: !!currentCheckoutOrder.termsAccepted,
+    terms_accepted_at: currentCheckoutOrder.termsAcceptedAt || new Date().toISOString()
+  };
+
+  const { data: orderRow, error: orderError } =
+    await window.DOWA_SUPABASE
+      .from("orders")
+      .insert(orderPayload)
+      .select("*")
+      .single();
+
+  if(orderError){
+    console.error("Supabase order creation failed:", orderError);
+    throw orderError;
+  }
+
+  const itemPayloads = currentCheckoutOrder.items.map(item => ({
+    order_id: orderRow.id,
+    product_id: item.productId,
+    product_name: item.name,
+    quantity: Number(item.quantity || 1),
+    unit_price: Number(item.price || 0),
+    size: item.size || null,
+    color: item.color || null
+  }));
+
+  if(itemPayloads.length){
+    const { error: itemError } =
+      await window.DOWA_SUPABASE
+        .from("order_items")
+        .insert(itemPayloads);
+
+    if(itemError){
+      console.error("Supabase order items creation failed:", itemError);
+      await window.DOWA_SUPABASE.from("orders").delete().eq("id", orderRow.id);
+      throw itemError;
+    }
+  }
+
+  return {
+    id: orderNumber,
+    dbId: orderRow.id,
+    userId: currentUser.id,
+    date: orderRow.created_at || new Date().toISOString(),
+    items: currentCheckoutOrder.items,
+    total: subtotal,
+    status: "Order Confirmed",
+    delivery,
+    termsAccepted: !!currentCheckoutOrder.termsAccepted,
+    termsAcceptedAt: currentCheckoutOrder.termsAcceptedAt,
+    customerConfirmed: false,
+    isDemo: false
+  };
+}
+
+async function renderOrders(){
   if(!currentUser) return;
 
-  ensureDemoOrder();
+  await loadSupabaseOrdersForCurrentUser();
 
   const panel = document.getElementById("accountPanel");
   if(!panel) return;
@@ -8495,10 +9573,7 @@ function confirmOrderDelivery(orderId){
   order.customerConfirmed = true;
   order.customerConfirmedAt = new Date().toISOString();
 
-  localStorage.setItem(
-    "dowaOrders",
-    JSON.stringify(orders)
-  );
+  writePrivateState("dowaOrders", orders);
 
   showToast("Delivery confirmed. Thank you.");
   renderOrders();
@@ -8618,86 +9693,45 @@ function renderWallet(){
    DEMO PAYMENT
 ========================================== */
 
-function simulatePayment(){
+async function simulatePayment(){
 
   if(!currentCheckoutOrder){
-
-    showToast(
-      "Checkout information is missing."
-    );
-
+    showToast("Checkout information is missing.");
     return;
-
   }
 
+  if(!currentUser){
+    showToast("Please sign in before placing an order.");
+    return;
+  }
 
-  const order={
+  try{
+    const order = await createSupabaseOrderFromCheckout();
 
-    id:
-      "DOWA-"+Date.now(),
+    if(!order){
+      showToast("Unable to create your order.");
+      return;
+    }
 
-    userId:
-      currentUser ? currentUser.id : null,
+    orders.unshift(order);
 
-    date:
-      new Date().toISOString(),
+    cart=[];
+    await clearSupabaseCartForCurrentUser();
+    updateCartCount();
 
-    items:
-      currentCheckoutOrder.items,
+    currentCheckoutOrder = null;
 
-    total:
-      currentCheckoutOrder.total,
+    showToast("Order created successfully.");
 
-    status:
-      "Order Confirmed",
+    setTimeout(()=>{
+      showPage("account");
+      renderOrders();
+    },800);
 
-    delivery:
-      currentCheckoutOrder.delivery,
-
-    termsAccepted:
-      currentCheckoutOrder.termsAccepted,
-
-    termsAcceptedAt:
-      currentCheckoutOrder.termsAcceptedAt
-
-  };
-
-
-  orders.push(order);
-
-
-  localStorage.setItem(
-    "dowaOrders",
-    JSON.stringify(orders)
-  );
-
-
-  cart=[];
-
-
-  localStorage.setItem(
-    "dowaCart",
-    JSON.stringify(cart)
-  );
-
-
-  updateCartCount();
-
-
-  currentCheckoutOrder =
-    null;
-
-
-  showToast(
-    "Demo order created."
-  );
-
-
-  setTimeout(()=>{
-
-    showPage("account");
-
-  },800);
+  }catch(error){
+    console.error("Order creation failed:", error);
+    showToast(error?.message || "Unable to create your order. Please try again.");
+  }
 
 }
 
@@ -8915,31 +9949,56 @@ renderHome();
 
 renderShop();
 
-if(currentUser){
-  ensureDemoOrder();
-}
-
 updateCartCount();
 
 loadProductFromUrl();
 
 loadWishlistFromUrl();
 
+/* Admin dashboard must not be exposed by a public URL flag.
+   Staff authentication/authorization will control this in the admin phase. */
 const adminMode = new URLSearchParams(window.location.search).get("admin");
-if(adminMode === "1"){ showPage("admin"); }
+if(adminMode === "1"){
+  console.warn("DOWA admin access requires staff authentication. Public admin URL access is disabled.");
+  showPage("home");
+}
 
 
 /* =========================
    CUSTOMER HELP & SUPPORT
 ========================= */
 const DOWA_SUPPORT_PHONE = "";
-const SUPPORT_STORAGE_KEY = "dowa_support_conversations";
+function supportStorageKey(){ return privateStorageKey("dowa_support_conversations"); }
 let selectedAdminConversationId = null;
 
-function getSupportConversations(){
-  try{ const data=JSON.parse(localStorage.getItem(SUPPORT_STORAGE_KEY)||"[]"); return Array.isArray(data)?data:[]; }catch(e){ return []; }
+async function getSupabaseCustomerId(){
+  if(!currentUser || !window.DOWA_SUPABASE) return null;
+
+  if(currentUser.customer_id){
+    return currentUser.customer_id;
+  }
+
+  const { data: customer, error } =
+    await window.DOWA_SUPABASE
+      .from("customers")
+      .select("id")
+      .eq("auth_user_id", currentUser.auth_user_id || currentUser.id)
+      .maybeSingle();
+
+  if(error){
+    console.error("Supabase customer lookup failed:", error);
+    return null;
+  }
+
+  if(!customer){
+    console.warn("No DOWA customer record found.");
+    return null;
+  }
+
+  currentUser.customer_id = customer.id;
+  return customer.id;
 }
-function saveSupportConversations(conversations){ localStorage.setItem(SUPPORT_STORAGE_KEY,JSON.stringify(conversations)); }
+
 function makeSupportId(prefix="SUP"){ return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`; }
 function formatSupportTime(value){ const d=new Date(value); return Number.isNaN(d.getTime())?"":d.toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}); }
 function escapeHtml(value){ return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;"); }
@@ -8947,52 +10006,233 @@ function getCurrentSupportIdentity(){
   if(currentUser) return {userId:String(currentUser.id||""),name:String(currentUser.name||"Customer"),email:String(currentUser.email||""),phone:String(currentUser.phone||"")};
   return {userId:"guest",name:"Guest Customer",email:"",phone:""};
 }
-function openHelpSupport(){ document.getElementById("helpSupportModal").classList.add("show"); renderSupportGuestFields(); renderCustomerSupportThread(); }
+
+let currentSupabaseSupportConversation = null;
+let currentSupabaseSupportMessages = [];
+
+async function loadSupabaseSupportConversation(){
+  const thread=document.getElementById("supportThread"),status=document.getElementById("supportConversationStatus");
+  if(!thread||!status) return null;
+
+  if(!currentUser || !window.DOWA_SUPABASE){
+    currentSupabaseSupportConversation = null;
+    currentSupabaseSupportMessages = [];
+    status.innerHTML=`<div class="support-status"><span class="support-dot"></span>Sign in to use Chat with DOWA.</div>`;
+    thread.innerHTML=`<div class="support-empty">Please sign in to start a support conversation with DOWA Homes.</div>`;
+    return null;
+  }
+
+  try{
+    const customerId = await getSupabaseCustomerId();
+    if(!customerId){
+      status.innerHTML=`<div class="support-status"><span class="support-dot"></span>Account record unavailable</div>`;
+      thread.innerHTML=`<div class="support-empty">We could not connect this account to DOWA support. Please try again.</div>`;
+      return null;
+    }
+
+    const { data: conversations, error: conversationError } =
+      await window.DOWA_SUPABASE
+        .from("support_conversations")
+        .select("id, customer_id, order_id, assigned_staff_id, subject, status, last_message_at, created_at, updated_at")
+        .eq("customer_id", customerId)
+        .order("updated_at", {ascending:false});
+
+    if(conversationError) throw conversationError;
+
+    const conversation = (conversations || [])[0] || null;
+    currentSupabaseSupportConversation = conversation;
+
+    if(!conversation){
+      currentSupabaseSupportMessages = [];
+      status.innerHTML=`<div class="support-status"><span class="support-dot"></span>No conversation yet</div>`;
+      thread.innerHTML=`<div class="support-empty">Send a message and your DOWA support conversation will appear here.</div>`;
+      return null;
+    }
+
+    const { data: messages, error: messageError } =
+      await window.DOWA_SUPABASE
+        .from("support_messages")
+        .select("id, conversation_id, sender_customer_id, sender_staff_id, message, is_read, created_at")
+        .eq("conversation_id", conversation.id)
+        .order("created_at", {ascending:true});
+
+    if(messageError) throw messageError;
+
+    currentSupabaseSupportMessages = messages || [];
+
+    const cls = conversation.status === "Resolved" ? "resolved" : conversation.status === "Waiting for Customer" ? "waiting" : "open";
+    status.innerHTML=`<div class="support-status"><span class="support-dot ${cls}"></span>${escapeHtml(conversation.status || "Open")}</div>`;
+    thread.innerHTML=currentSupabaseSupportMessages.map(m=>{
+      const fromStaff = !!m.sender_staff_id;
+      return `<div class="support-bubble ${fromStaff?"admin":"customer"}">${escapeHtml(m.message)}<small>${fromStaff?"DOWA Homes":"You"} · ${formatSupportTime(m.created_at)}</small></div>`;
+    }).join("");
+    thread.scrollTop=thread.scrollHeight;
+
+    return conversation;
+  }catch(error){
+    console.error("Supabase support load failed:", error);
+    status.innerHTML=`<div class="support-status"><span class="support-dot"></span>Unable to load support</div>`;
+    thread.innerHTML=`<div class="support-empty">We could not load your support conversation. Please try again.</div>`;
+    return null;
+  }
+}
+
+async function openHelpSupport(){
+  document.getElementById("helpSupportModal").classList.add("show");
+  renderSupportGuestFields();
+  await loadSupabaseSupportConversation();
+}
+
 function closeHelpSupport(){ document.getElementById("helpSupportModal").classList.remove("show"); }
+
 function renderSupportGuestFields(){
   const holder=document.getElementById("supportGuestFields"); if(!holder)return;
   if(currentUser){ holder.innerHTML=`<div class="support-login-note">Sending as <strong>${escapeHtml(currentUser.name)}</strong> · ${escapeHtml(currentUser.email)}</div>`; return; }
-  holder.innerHTML=`<div class="support-login-note">You can send a support message as a guest. Add your name and email so the DOWA team can identify and reply to you.</div><div class="support-field"><label for="supportGuestName">Name</label><input id="supportGuestName" type="text" placeholder="Your name"></div><div class="support-field"><label for="supportGuestEmail">Email</label><input id="supportGuestEmail" type="email" placeholder="you@example.com"></div>`;
+  holder.innerHTML=`<div class="support-login-note">You can browse support options as a guest. Sign in to send and keep a support conversation.</div><div class="support-field"><label for="supportGuestName">Name</label><input id="supportGuestName" type="text" placeholder="Your name"></div><div class="support-field"><label for="supportGuestEmail">Email</label><input id="supportGuestEmail" type="email" placeholder="you@example.com"></div>`;
 }
-function findCustomerSupportConversation(){
-  const id=getCurrentSupportIdentity(); const conversations=getSupportConversations();
-  return conversations.filter(c=>id.userId!=="guest"?c.userId===id.userId:(c.userId==="guest"&&c.email&&id.email&&c.email===id.email)).sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt))[0]||null;
+
+async function sendSupportMessage(){
+  const input=document.getElementById("supportMessageText"),order=document.getElementById("supportOrderNumber");
+  if(!input)return;
+
+  const text=input.value.trim();
+  if(!text){showToast("Please write a message first.");return;}
+
+  if(!currentUser){
+    showToast("Please sign in before sending a support message.");
+    return;
+  }
+
+  if(!window.DOWA_SUPABASE){
+    showToast("Support is temporarily unavailable.");
+    return;
+  }
+
+  try{
+    const customerId = await getSupabaseCustomerId();
+    if(!customerId){
+      showToast("Your DOWA customer profile could not be found.");
+      return;
+    }
+
+    const orderNumber = order ? order.value.trim() : "";
+    let orderId = null;
+
+    if(orderNumber){
+      const { data: orderRow, error: orderLookupError } =
+        await window.DOWA_SUPABASE
+          .from("orders")
+          .select("id")
+          .eq("customer_id", customerId)
+          .eq("order_number", orderNumber)
+          .maybeSingle();
+
+      if(orderLookupError){
+        console.error("Support order lookup failed:", orderLookupError);
+        showToast("We could not verify that order number. You can send the message without it.");
+        return;
+      }
+
+      if(!orderRow){
+        showToast("That order number was not found on your account.");
+        return;
+      }
+
+      orderId = orderRow.id;
+    }
+
+    let conversation = currentSupabaseSupportConversation;
+
+    if(!conversation){
+      const { data: existingConversations, error: existingError } =
+        await window.DOWA_SUPABASE
+          .from("support_conversations")
+          .select("id, customer_id, order_id, assigned_staff_id, subject, status, last_message_at, created_at, updated_at")
+          .eq("customer_id", customerId)
+          .order("updated_at", {ascending:false})
+          .limit(1);
+
+      if(existingError) throw existingError;
+      conversation = (existingConversations || [])[0] || null;
+    }
+
+    const now = new Date().toISOString();
+
+    if(!conversation){
+      const { data: createdConversation, error: createConversationError } =
+        await window.DOWA_SUPABASE
+          .from("support_conversations")
+          .insert({
+            customer_id: customerId,
+            order_id: orderId,
+            subject: orderNumber ? `Order Support — ${orderNumber}` : "General Support",
+            status: "Open",
+            last_message_at: now,
+            updated_at: now
+          })
+          .select("id, customer_id, order_id, assigned_staff_id, subject, status, last_message_at, created_at, updated_at")
+          .single();
+
+      if(createConversationError) throw createConversationError;
+      conversation = createdConversation;
+    }else{
+      const conversationUpdate = {
+        status: "Open",
+        last_message_at: now,
+        updated_at: now
+      };
+      if(orderId) conversationUpdate.order_id = orderId;
+
+      const { data: updatedConversation, error: updateConversationError } =
+        await window.DOWA_SUPABASE
+          .from("support_conversations")
+          .update(conversationUpdate)
+          .eq("id", conversation.id)
+          .select("id, customer_id, order_id, assigned_staff_id, subject, status, last_message_at, created_at, updated_at")
+          .single();
+
+      if(updateConversationError) throw updateConversationError;
+      conversation = updatedConversation;
+    }
+
+    const { error: messageError } =
+      await window.DOWA_SUPABASE
+        .from("support_messages")
+        .insert({
+          conversation_id: conversation.id,
+          sender_customer_id: customerId,
+          message: text,
+          is_read: true
+        });
+
+    if(messageError) throw messageError;
+
+    currentSupabaseSupportConversation = conversation;
+    input.value="";
+    if(order) order.value=orderNumber;
+
+    await loadSupabaseSupportConversation();
+    showToast("Your message has been sent to DOWA Homes.");
+  }catch(error){
+    console.error("Supabase support message failed:", error);
+    showToast("We could not send your message. Please try again.");
+  }
 }
-function renderCustomerSupportThread(){
-  const thread=document.getElementById("supportThread"),status=document.getElementById("supportConversationStatus"); if(!thread||!status)return;
-  const c=findCustomerSupportConversation();
-  if(!c){ status.innerHTML=`<div class="support-status"><span class="support-dot"></span>No conversation yet</div>`; thread.innerHTML=`<div class="support-empty">Send a message and your DOWA support conversation will appear here.</div>`; return; }
-  const cls=c.status==="Resolved"?"resolved":c.status==="Waiting for Customer"?"waiting":"open";
-  status.innerHTML=`<div class="support-status"><span class="support-dot ${cls}"></span>${escapeHtml(c.status)}</div>`;
-  thread.innerHTML=(c.messages||[]).map(m=>`<div class="support-bubble ${m.senderType==="admin"?"admin":"customer"}">${escapeHtml(m.text)}<small>${m.senderType==="admin"?"DOWA Homes":"You"} · ${formatSupportTime(m.createdAt)}</small></div>`).join(""); thread.scrollTop=thread.scrollHeight;
-}
-function sendSupportMessage(){
-  const input=document.getElementById("supportMessageText"),order=document.getElementById("supportOrderNumber"); if(!input)return; const text=input.value.trim(); if(!text){showToast("Please write a message first.");return;}
-  const identity=getCurrentSupportIdentity(); let name=identity.name,email=identity.email;
-  if(!currentUser){ const n=document.getElementById("supportGuestName"),e=document.getElementById("supportGuestEmail"); name=n?n.value.trim():"";email=e?e.value.trim():"";if(!name||!email){showToast("Please enter your name and email.");return;} }
-  const conversations=getSupportConversations(); let c=conversations.find(x=>currentUser?x.userId===identity.userId:(x.userId==="guest"&&x.email===email)); const now=new Date().toISOString();
-  const msg={id:makeSupportId("MSG"),senderType:"customer",senderName:name,text,createdAt:now};
-  if(!c){c={id:makeSupportId(),userId:currentUser?identity.userId:"guest",name,email,phone:identity.phone||"",orderNumber:order?order.value.trim():"",status:"Open",unreadForAdmin:true,unreadForCustomer:false,createdAt:now,updatedAt:now,messages:[msg]};conversations.push(c);}else{c.name=name||c.name;c.email=email||c.email;if(order&&order.value.trim())c.orderNumber=order.value.trim();c.status="Open";c.unreadForAdmin=true;c.unreadForCustomer=false;c.updatedAt=now;c.messages=c.messages||[];c.messages.push(msg);}
-  saveSupportConversations(conversations);input.value="";if(order)order.value=c.orderNumber||"";renderCustomerSupportThread();showToast("Your message has been sent to DOWA Homes.");
-}
+
 function renderAdminSupport(){
-  const list=document.getElementById("adminConversationList"),count=document.getElementById("adminConversationCount"),detail=document.getElementById("adminConversationDetail"),reply=document.getElementById("adminReplyBox");if(!list||!count||!detail||!reply)return;
-  const cs=getSupportConversations().sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt)); count.textContent=`${cs.filter(c=>c.unreadForAdmin).length} unread · ${cs.length} total`;
-  if(!cs.length){list.innerHTML=`<div class="support-empty" style="padding:20px">No customer support conversations yet.</div>`;selectedAdminConversationId=null;reply.style.display="none";detail.innerHTML=`<div class="admin-detail-empty">Customer support messages will appear here.</div>`;return;}
-  if(!selectedAdminConversationId||!cs.some(c=>c.id===selectedAdminConversationId))selectedAdminConversationId=cs[0].id;
-  list.innerHTML=cs.map(c=>{const last=(c.messages||[]).at(-1);return `<button class="admin-conversation-item ${c.id===selectedAdminConversationId?"active":""}" type="button" onclick="selectAdminConversation('${c.id}')"><strong>${escapeHtml(c.name||"Customer")}${c.unreadForAdmin?` <span class="admin-unread">•</span>`:""}</strong><p>${escapeHtml(last?last.text:"No messages")}</p><div class="admin-conversation-meta"><span>${escapeHtml(c.status)}</span><span>${formatSupportTime(c.updatedAt)}</span></div></button>`;}).join(""); renderAdminConversationDetail();
+  const detail=document.getElementById("adminConversationDetail");
+  const reply=document.getElementById("adminReplyBox");
+  const list=document.getElementById("adminConversationList");
+  const count=document.getElementById("adminConversationCount");
+  if(list) list.innerHTML=`<div class="support-empty" style="padding:20px">Admin support access will be connected after staff roles and permissions are enabled.</div>`;
+  if(count) count.textContent="0";
+  if(detail) detail.innerHTML=`<div class="admin-detail-empty">Staff support management will be connected in the Roles & Permissions step.</div>`;
+  if(reply) reply.style.display="none";
 }
-function selectAdminConversation(id){ selectedAdminConversationId=id;const cs=getSupportConversations(),c=cs.find(x=>x.id===id);if(c){c.unreadForAdmin=false;saveSupportConversations(cs);}renderAdminSupport(); }
-function renderAdminConversationDetail(){
-  const c=getSupportConversations().find(x=>x.id===selectedAdminConversationId),detail=document.getElementById("adminConversationDetail"),reply=document.getElementById("adminReplyBox");if(!detail||!reply)return;
-  if(!c){detail.innerHTML=`<div class="admin-detail-empty">Select a customer conversation to view the messages and reply.</div>`;reply.style.display="none";return;}
-  detail.innerHTML=`<div class="admin-customer-card"><div><span>Customer</span><strong>${escapeHtml(c.name||"Customer")}</strong></div><div><span>Email</span><strong>${escapeHtml(c.email||"Not provided")}</strong></div><div><span>Order</span><strong>${escapeHtml(c.orderNumber||"Not provided")}</strong></div></div><div class="admin-thread">${(c.messages||[]).map(m=>`<div class="admin-bubble ${m.senderType==="admin"?"admin":"customer"}">${escapeHtml(m.text)}<small>${m.senderType==="admin"?"DOWA Homes":escapeHtml(c.name||"Customer")} · ${formatSupportTime(m.createdAt)}</small></div>`).join("")}</div>`;
-  const select=document.getElementById("adminStatusSelect"),text=document.getElementById("adminReplyText");if(select)select.value=c.status||"Open";if(text)text.value="";reply.style.display="grid";
-}
-function updateSelectedSupportStatus(status){if(!selectedAdminConversationId)return;const cs=getSupportConversations(),c=cs.find(x=>x.id===selectedAdminConversationId);if(!c)return;c.status=status;c.updatedAt=new Date().toISOString();saveSupportConversations(cs);renderAdminSupport();}
-function sendAdminSupportReply(){
-  if(!selectedAdminConversationId)return;const input=document.getElementById("adminReplyText"),text=input?input.value.trim():"";if(!text){showToast("Write a reply first.");return;}const cs=getSupportConversations(),c=cs.find(x=>x.id===selectedAdminConversationId);if(!c)return;const now=new Date().toISOString();c.messages=c.messages||[];c.messages.push({id:makeSupportId("MSG"),senderType:"admin",senderName:"DOWA Homes",text,createdAt:now});c.status="Waiting for Customer";c.unreadForAdmin=false;c.unreadForCustomer=true;c.updatedAt=now;saveSupportConversations(cs);if(input)input.value="";renderAdminSupport();showToast("Reply sent to the customer.");
-}
+function selectAdminConversation(){ showToast("Admin support is not connected yet."); }
+function updateSelectedSupportStatus(){ showToast("Admin support is not connected yet."); }
+function sendAdminSupportReply(){ showToast("Admin support is not connected yet."); }
+
 function getDowaSupportPhone(){return String(DOWA_SUPPORT_PHONE||"").replace(/[^0-9+]/g,"");}
 function contactDowaWhatsApp(){const phone=getDowaSupportPhone(),message="Hello DOWA Homes, I need help with my order/product.";if(!phone){showToast("DOWA WhatsApp number has not been added yet.");return;}window.open(`https://wa.me/${phone.replace(/^\+/,"")}?text=${encodeURIComponent(message)}`,"_blank");}
 function callDowaSupport(){const phone=getDowaSupportPhone();if(!phone){showToast("DOWA support phone number has not been added yet.");return;}window.location.href=`tel:${phone}`;}
