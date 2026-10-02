@@ -2957,6 +2957,26 @@ textarea{
   }
 }
 
+
+/* ==========================================
+   NOTIFICATIONS
+========================================== */
+.notification-bell{position:relative;display:inline-flex!important;align-items:center;justify-content:center}
+.notification-badge{position:absolute;top:-3px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#171716;color:#fff;font:700 9px/16px Arial,sans-serif;text-align:center;display:none}
+.notification-badge.show{display:block}
+.notification-panel{width:min(560px,100%);max-height:min(78vh,680px);overflow:auto;background:#fff;border:1px solid var(--line);padding:0}
+.notification-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:2}
+.notification-head h3{margin:0;font:400 22px Georgia,serif}
+.notification-list{display:grid}
+.notification-item{display:grid;grid-template-columns:10px 1fr auto;gap:12px;padding:15px 20px;border-bottom:1px solid var(--line);cursor:pointer}
+.notification-item.unread{background:#faf8f3}
+.notification-dot{width:7px;height:7px;border-radius:50%;background:var(--dark);margin-top:6px}
+.notification-item.read .notification-dot{background:transparent}
+.notification-item h4{margin:0 0 4px;font-size:12px}
+.notification-item p{margin:0;color:var(--muted);font-size:10px;line-height:1.6}
+.notification-item small{color:var(--muted);font-size:9px;white-space:nowrap}
+.notification-empty{padding:35px 20px;text-align:center;color:var(--muted);font-size:11px}
+
 </style>
 
 <!-- ==========================================
@@ -2974,46 +2994,7 @@ textarea{
   console.log("DOWA Supabase client connected.");
 </script>
 
-<script>
-/* ==========================================
-   DOWA HOMES — SUPABASE AUTH SYNC
-   Supabase Auth is the single source of truth.
-========================================== */
-window.DOWA_SUPABASE.auth.onAuthStateChange(async (event, session) => {
-  try {
-    if (session?.user) {
-      const user = session.user;
-      currentUser = {
-        id: user.id,
-        auth_user_id: user.id,
-        name: user.user_metadata?.full_name || "",
-        email: user.email || "",
-        phone: user.user_metadata?.phone || "",
-        address: user.user_metadata?.address || "",
-        verified: !!user.email_confirmed_at
-      };
 
-      loadPrivateState(user.id);
-
-      // Do not let an old browser cache override the Supabase account.
-      await loadSupabaseWishlistForCurrentUser();
-      await loadSupabaseAddressesForCurrentUser();
-      await loadSupabaseCartForCurrentUser();
-
-      savePrivateUserCache();
-      updateCartCount();
-      updateMobileBottomNav();
-    } else if (event === "SIGNED_OUT") {
-      currentUser = null;
-      clearPrivateState();
-      updateCartCount();
-      updateMobileBottomNav();
-    }
-  } catch (error) {
-    console.error("DOWA Auth state sync failed:", error);
-  }
-});
-</script>
 
 </head>
 
@@ -3111,6 +3092,16 @@ window.DOWA_SUPABASE.auth.onAuthStateChange(async (event, session) => {
       title="Account"
     >
       ♙
+    </button>
+
+    <button
+      class="nav-btn notification-bell"
+      onclick="openCustomerNotifications()"
+      title="Notifications"
+      aria-label="Notifications"
+    >
+      🔔
+      <span class="notification-badge" id="customerNotificationBadge">0</span>
     </button>
 
     <button
@@ -4249,8 +4240,8 @@ window.DOWA_SUPABASE.auth.onAuthStateChange(async (event, session) => {
     "
   >
 
-    <strong>
-      🎁 Your DOWA Wishlist
+    <strong id="wishlistShareTitle">
+      🎁 DOWA Wishlist
     </strong>
 
     <br>
@@ -4609,7 +4600,7 @@ window.DOWA_SUPABASE.auth.onAuthStateChange(async (event, session) => {
    PRODUCT DATA
 ========================================== */
 
-const products = [
+let products = [
 
   {
     id:1,
@@ -4769,6 +4760,267 @@ const products = [
 
 ];
 
+const legacyProducts = products.slice();
+
+/* ==========================================
+   SUPABASE PRODUCT CATALOGUE
+   Supabase is the primary source for products
+   created from the Admin Dashboard.
+========================================== */
+
+async function loadSupabaseProducts(){
+
+  if(!window.DOWA_SUPABASE){
+    console.warn("DOWA Supabase client unavailable. Keeping local catalogue.");
+    return;
+  }
+
+  try{
+
+    const [
+      productsResult,
+      variantsResult,
+      inventoryResult
+    ] = await Promise.all([
+
+      window.DOWA_SUPABASE
+        .from("products")
+        .select(`
+          id,
+          name,
+          category,
+          base_price,
+          status,
+          description,
+          main_image_url
+        `)
+        .order("id", { ascending:true }),
+
+      window.DOWA_SUPABASE
+        .from("product_variants")
+        .select(`
+          id,
+          product_id,
+          variant_name,
+          color,
+          sku,
+          original_price,
+          sale_price,
+          stock_quantity,
+          status
+        `)
+        .order("id", { ascending:true }),
+
+      window.DOWA_SUPABASE
+        .from("inventory")
+        .select(`
+          id,
+          variant_id,
+          quantity,
+          low_stock_threshold
+        `)
+
+    ]);
+
+    if(productsResult.error) throw productsResult.error;
+    if(variantsResult.error) throw variantsResult.error;
+    if(inventoryResult.error) throw inventoryResult.error;
+
+    const dbProducts = productsResult.data || [];
+    const dbVariants = variantsResult.data || [];
+    const dbInventory = inventoryResult.data || [];
+
+    const inventoryByVariant = new Map(
+      dbInventory.map(row => [
+        Number(row.variant_id),
+        row
+      ])
+    );
+
+    const variantsByProduct = new Map();
+
+    dbVariants.forEach(row => {
+
+      const productId = Number(row.product_id);
+
+      if(!variantsByProduct.has(productId)){
+        variantsByProduct.set(productId, []);
+      }
+
+      const inventory =
+        inventoryByVariant.get(Number(row.id));
+
+      variantsByProduct.get(productId).push({
+
+        id: Number(row.id),
+        productId,
+
+        variantName:
+          row.variant_name || "",
+
+        color:
+          row.color || "",
+
+        sku:
+          row.sku || "",
+
+        originalPrice:
+          Number(row.original_price ?? 0),
+
+        salePrice:
+          Number(
+            row.sale_price ??
+            row.original_price ??
+            0
+          ),
+
+        stockQuantity:
+          Number(
+            inventory?.quantity ??
+            row.stock_quantity ??
+            0
+          ),
+
+        lowStockThreshold:
+          Number(
+            inventory?.low_stock_threshold ??
+            0
+          ),
+
+        status:
+          row.status || ""
+
+      });
+
+    });
+
+    const supabaseProducts =
+      dbProducts.map(row => {
+
+        const id = Number(row.id);
+        const variants =
+          variantsByProduct.get(id) || [];
+
+        const firstVariant =
+          variants[0] || null;
+
+        const price =
+          Number(
+            firstVariant?.salePrice ||
+            row.base_price ||
+            0
+          );
+
+        const tags = [
+          row.name || "",
+          row.category || "",
+          ...variants.map(variant =>
+            `${variant.variantName} ${variant.color}`
+          )
+        ]
+        .join(" ")
+        .trim();
+
+        return {
+
+          id,
+
+          name:
+            row.name ||
+            "DOWA Product",
+
+          category:
+            row.category ||
+            "",
+
+          price,
+
+          description:
+            row.description ||
+            "",
+
+          tags,
+
+          rating:0,
+          reviews:0,
+          badge:"",
+
+          image:
+            row.main_image_url ||
+            "",
+
+          status:
+            row.status ||
+            "",
+
+          variants
+
+        };
+
+      });
+
+    /*
+      Supabase is authoritative.
+      Existing hardcoded products are only a secondary
+      fallback for products not found in Supabase.
+    */
+
+    const supabaseIds =
+      new Set(
+        supabaseProducts.map(
+          product => Number(product.id)
+        )
+      );
+
+    const legacyFallbackProducts =
+      legacyProducts.filter(
+        product =>
+          !supabaseIds.has(
+            Number(product.id)
+          )
+      );
+
+    products = [
+      ...supabaseProducts,
+      ...legacyFallbackProducts
+    ];
+
+    renderHome();
+    renderShop();
+
+    /*
+      Re-resolve direct product URLs after the
+      Supabase catalogue has loaded.
+    */
+    loadProductFromUrl();
+
+    // If the customer session restored before the catalogue finished loading,
+    // reload the cart now so its product names/prices are resolved correctly.
+    if(currentUser){
+      await loadSupabaseCartForCurrentUser();
+      updateCartCount();
+    }
+
+    console.log(
+      `DOWA Supabase products loaded: ${supabaseProducts.length}`
+    );
+
+  }catch(error){
+
+    console.error(
+      "DOWA Supabase product catalogue load failed:",
+      error
+    );
+
+    /*
+      If Supabase cannot be read, the existing catalogue
+      remains visible instead of breaking the storefront.
+    */
+
+  }
+
+}
+
 
 /* ==========================================
    PRODUCT REVIEWS — SUPABASE
@@ -4911,7 +5163,8 @@ function loadPrivateState(userId){
     return;
   }
   cart = readPrivateState("dowaCart", []);
-  wishlist = readPrivateState("dowaWishlist", []);
+  // Wishlist is Supabase-only. Never hydrate it from localStorage.
+  wishlist = [];
   orders = readPrivateState("dowaOrders", []);
 } 
 
@@ -5316,160 +5569,243 @@ async function clearSupabaseCartForCurrentUser(){
 
 
 /* ==========================================
-   RESTORE SUPABASE SESSION
+   DOWA HOMES — CUSTOMER SESSION HYDRATION
+   Rebuild the customer from Supabase Auth + customers
+   whenever the storefront is opened, returned to, or
+   refreshed. Supabase remains the source of truth.
 ========================================== */
+let __dowaHydrationPromise = null;
 
-async function restoreSupabaseSession(){
+async function hydrateCurrentUserFromSession(session){
+  if(!session || !session.user){
+    currentUser = null;
+    clearPrivateState();
+    customerNotifications=[];
+    clearInterval(customerNotificationPoll);
+    updateCustomerNotificationBadge();
+    updateCartCount();
+    updateMobileBottomNav();
+    return null;
+  }
 
-  try{
+  if(__dowaHydrationPromise){
+    return __dowaHydrationPromise;
+  }
 
-    const {
-      data,
-      error
-    } =
-      await window.DOWA_SUPABASE.auth.getSession();
+  __dowaHydrationPromise = (async()=>{
+    const user = session.user;
 
+    // Restore the last known profile immediately while Supabase customer
+    // data is being fetched. This prevents the account UI from flashing
+    // "Hello, Customer" during session restoration. Supabase remains the
+    // source of truth and will overwrite these values when the query returns.
+    let cachedUser = null;
+    try{
+      const cachedRaw = localStorage.getItem(`dowaUser_${user.id}`);
+      cachedUser = cachedRaw ? JSON.parse(cachedRaw) : null;
+    }catch(e){}
 
-    if(error){
-
-      console.error(
-        "Supabase session error:",
-        error
-      );
-
-      return;
-
-    }
-
-
-    const session =
-      data.session;
-
-
-    if(!session || !session.user){
-
-      currentUser = null;
-
-      return;
-
-    }
-
-
-    const user =
-      session.user;
-
-
-    currentUser = {
-
-      id: user.id,
-
-      auth_user_id: user.id,
-
-      name:
-        user.user_metadata?.full_name
-        || "",
-
-      email:
-        user.email
-        || "",
-
-      phone:
-        user.user_metadata?.phone
-        || "",
-
-      address:
-        user.user_metadata?.address
-        || "",
-
-      verified:
-        !!user.email_confirmed_at
-
+    const hydratedUser = {
+      id:user.id,
+      auth_user_id:user.id,
+      customer_id:null,
+      name:user.user_metadata?.full_name || cachedUser?.name || "",
+      email:user.email || cachedUser?.email || "",
+      phone:user.user_metadata?.phone || cachedUser?.phone || "",
+      address:user.user_metadata?.address || cachedUser?.address || "",
+      profileImage:user.user_metadata?.profile_image_url || cachedUser?.profileImage || "",
+      verified:!!user.email_confirmed_at,
+      addresses:[]
     };
 
+    try{
+      let customer = null;
 
-    loadPrivateState(currentUser.id);
+      const byAuth = await window.DOWA_SUPABASE
+        .from("customers")
+        .select("id, auth_user_id, full_name, email, phone, profile_image_url")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+
+      if(byAuth.error){
+        console.error("DOWA customer auth lookup failed:", byAuth.error);
+      }else{
+        customer = byAuth.data || null;
+      }
+
+      // Older customer records may have the correct email but no auth_user_id.
+      if(!customer && user.email){
+        const byEmail = await window.DOWA_SUPABASE
+          .from("customers")
+          .select("id, auth_user_id, full_name, email, phone, profile_image_url")
+          .eq("email", user.email.toLowerCase())
+          .maybeSingle();
+
+        if(byEmail.error){
+          console.error("DOWA customer email lookup failed:", byEmail.error);
+        }else if(byEmail.data){
+          customer = byEmail.data;
+
+          if(!customer.auth_user_id || customer.auth_user_id !== user.id){
+            const repair = await window.DOWA_SUPABASE
+              .from("customers")
+              .update({ auth_user_id:user.id, updated_at:new Date().toISOString() })
+              .eq("id", customer.id);
+
+            if(repair.error){
+              console.warn("DOWA customer auth link repair failed:", repair.error);
+            }else{
+              customer.auth_user_id = user.id;
+            }
+          }
+        }
+      }
+
+      if(customer){
+        hydratedUser.customer_id = customer.id;
+        hydratedUser.name = customer.full_name || hydratedUser.name || "";
+        hydratedUser.email = customer.email || hydratedUser.email || "";
+        hydratedUser.phone = customer.phone || hydratedUser.phone || "";
+        hydratedUser.profileImage = customer.profile_image_url || hydratedUser.profileImage || "";
+      }else{
+        console.warn("No DOWA customer profile found for authenticated user:", user.id);
+      }
+    }catch(customerError){
+      console.error("DOWA customer profile hydration failed:", customerError);
+    }
+
+    currentUser = hydratedUser;
+    loadPrivateState(user.id);
+
+    // Always restore the account-owned Supabase state, never an old guest cache.
     await loadSupabaseWishlistForCurrentUser();
     await loadSupabaseAddressesForCurrentUser();
     await loadSupabaseCartForCurrentUser();
+    await loadCustomerNotifications(true);
+    startCustomerNotificationPolling();
 
+    savePrivateUserCache();
+    localStorage.setItem("dowaUser", JSON.stringify(currentUser));
 
-    console.log(
-      "DOWA Supabase session restored."
-    );
+    updateCartCount();
+    updateMobileBottomNav();
 
-
-  }catch(error){
-
-    console.error(
-      "Unable to restore Supabase session:",
-      error
-    );
-
-  }
-
-}
-
-
-/*
-  Keep currentUser synchronized whenever
-  Supabase signs the customer in or out.
-*/
-
-window.DOWA_SUPABASE.auth.onAuthStateChange(
-  async (event, session)=>{
-
-    if(session && session.user){
-
-      const user =
-        session.user;
-
-
-      currentUser = {
-
-        id: user.id,
-
-        auth_user_id: user.id,
-
-        name:
-          user.user_metadata?.full_name
-          || "",
-
-        email:
-          user.email
-          || "",
-
-        phone:
-          user.user_metadata?.phone
-          || "",
-
-        address:
-          user.user_metadata?.address
-          || "",
-
-        verified:
-          !!user.email_confirmed_at
-
-      };
-
-
-      loadPrivateState(currentUser.id);
-      await loadSupabaseWishlistForCurrentUser();
-      await loadSupabaseAddressesForCurrentUser();
-
-
-    }else{
-
-      currentUser = null;
-
-      clearPrivateState();
-
+    // Refresh any visible account/cart UI after the async session restore.
+    try{
+      if(typeof renderCart === "function" && document.getElementById("cartPage")) renderCart();
+      if(typeof renderAccount === "function" && document.getElementById("accountPage")) renderAccount();
+    }catch(renderError){
+      console.warn("DOWA session UI refresh skipped:", renderError);
     }
 
+    console.log("DOWA customer session fully hydrated.", currentUser.customer_id || "no-customer-id");
+    return currentUser;
+  })();
+
+  try{
+    return await __dowaHydrationPromise;
+  }finally{
+    __dowaHydrationPromise = null;
   }
-);
+}
 
+/* ==========================================
+   RESTORE SUPABASE SESSION
+========================================== */
+async function restoreSupabaseSession(){
+  try{
+    const { data, error } = await window.DOWA_SUPABASE.auth.getSession();
 
-restoreSupabaseSession();
+    if(error){
+      console.error("Supabase session error:", error);
+      return;
+    }
+
+    if(data?.session?.user){
+      await hydrateCurrentUserFromSession(data.session);
+    }else if(!currentUser){
+      // Only initialize the storefront as a guest when there is no
+      // already-hydrated customer. A transient empty getSession()
+      // result must never wipe a valid signed-in customer state.
+      currentUser = null;
+      clearPrivateState();
+      customerNotifications=[];
+      clearInterval(customerNotificationPoll);
+      updateCustomerNotificationBadge();
+      updateCartCount();
+      updateMobileBottomNav();
+    }
+  }catch(error){
+    console.error("Unable to restore Supabase session:", error);
+  }
+}
+
+/*
+  Keep the customer synchronized without clearing a valid session
+  during token refreshes or page/history navigation.
+*/
+window.DOWA_SUPABASE.auth.onAuthStateChange((event, session)=>{
+  setTimeout(async()=>{
+    try{
+      if(session?.user){
+        await hydrateCurrentUserFromSession(session);
+      }else if(event === "SIGNED_OUT"){
+        currentUser = null;
+        clearPrivateState();
+        customerNotifications=[];
+        clearInterval(customerNotificationPoll);
+        updateCustomerNotificationBadge();
+        updateCartCount();
+        updateMobileBottomNav();
+      }
+    }catch(error){
+      console.error("DOWA Auth state sync failed:", error);
+    }
+  },0);
+});
+
+/* Re-check the existing Supabase session when returning to the storefront. */
+/*
+  Session bootstrap must never become a permanently cached promise.
+  Supabase can finish restoring its persisted session just after the first
+  getSession() call. If we kept a completed empty bootstrap promise, clicking
+  Account could incorrectly treat a real customer as a guest until the user
+  logged out and back in.
+*/
+let __dowaSessionBootstrapPromise = null;
+
+async function bootstrapDowaSession(){
+  if(__dowaSessionBootstrapPromise){
+    return __dowaSessionBootstrapPromise;
+  }
+
+  __dowaSessionBootstrapPromise = restoreSupabaseSession();
+
+  try{
+    return await __dowaSessionBootstrapPromise;
+  }finally{
+    // A future navigation must be allowed to perform a fresh getSession().
+    __dowaSessionBootstrapPromise = null;
+  }
+}
+
+window.addEventListener("pageshow", ()=>{
+  if(document.readyState === "loading") return;
+  restoreSupabaseSession();
+});
+
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "visible" && document.readyState !== "loading"){
+    restoreSupabaseSession();
+  }
+});
+
+/* IMPORTANT: do not hydrate the customer before the storefront DOM exists. */
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", bootstrapDowaSession, {once:true});
+}else{
+  bootstrapDowaSession();
+}
 
 let users = [];
 
@@ -6801,6 +7137,13 @@ function addToCartWithoutDrawer(
   color
 ){
 
+  // DOWA requires customers to sign in before adding items to cart.
+  if(!currentUser){
+    showPage("auth");
+    showToast("Please sign in to add items to your cart.");
+    return;
+  }
+
   const existing =
     cart.find(item=>
 
@@ -6845,11 +7188,8 @@ function addToCartWithoutDrawer(
   }
 
 
-  if(currentUser){
-    persistSupabaseCartForCurrentUser();
-  }else{
-    writePrivateState("dowaCart", cart);
-  }
+  // Logged-in customer carts are stored in Supabase only.
+  persistSupabaseCartForCurrentUser();
 
 }
 
@@ -7154,16 +7494,24 @@ async function buyCurrentProduct(){
    AUTH
 ========================================== */
 
-function handleAccountClick(){
+async function handleAccountClick(){
+
+  // If the page has just loaded, wait for the Supabase session check before
+  // deciding that this customer is a guest. This fixes the recurring
+  // "Hello, Customer" / login-again race condition.
+  if(!currentUser){
+    try{
+      await bootstrapDowaSession();
+    }catch(error){
+      console.error("Account session bootstrap failed:", error);
+    }
+  }
 
   if(currentUser){
-
     showPage("account");
-
+    await hydrateCurrentUserFromSession({user:{...currentUser, id:currentUser.auth_user_id || currentUser.id}}).catch(()=>{});
   }else{
-
     showPage("auth");
-
   }
 
 }
@@ -7538,21 +7886,7 @@ async function login(){
       return;
     }
 
-    const user = data.user;
-    currentUser = {
-      id:user.id,
-      auth_user_id:user.id,
-      name:user.user_metadata?.full_name || "",
-      email:user.email || email,
-      phone:user.user_metadata?.phone || "",
-      address:user.user_metadata?.address || "",
-      verified:!!user.email_confirmed_at
-    };
-
-    loadPrivateState(user.id);
-    await loadSupabaseWishlistForCurrentUser();
-    await loadSupabaseAddressesForCurrentUser();
-    await loadSupabaseCartForCurrentUser();
+    await hydrateCurrentUserFromSession(data.session || { user:data.user });
 
     showToast("Welcome back.");
     setTimeout(()=>showPage("home"),700);
@@ -7829,250 +8163,184 @@ function openWishlist(){
 
 }
 
-function getWishlistShareUrl(){
+async function createWishlistShare(platform){
 
-  if(!currentUser)
-    return "";
+  if(!currentUser){
+    showToast("Please sign in to share your wishlist.");
+    return null;
+  }
 
-  const payload = {
-    id: currentUser.id || "",
-    name: currentUser.name || "DOWA Customer",
-    email: currentUser.email || "",
-    profileImage: currentUser.profileImage || ""
-  };
+  if(!currentUser.wishlist_id){
+    await loadSupabaseWishlistForCurrentUser();
+  }
 
-  const wishlistId =
-    btoa(
-      encodeURIComponent(
-        JSON.stringify(payload)
-      )
-    )
-    .replace(/=/g,"")
-    .replace(/\//g,"")
-    .replace(/\+/g,"");
+  if(!currentUser.wishlist_id){
+    showToast("Your wishlist is still loading. Please try again.");
+    return null;
+  }
 
-  return (
-    `${window.location.origin}` +
-    `${window.location.pathname}` +
-    `?wishlist=${wishlistId}`
-  );
+  try{
 
+    const token =
+      (window.crypto && typeof window.crypto.randomUUID === "function")
+      ? window.crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,12)}`;
+
+    const { data, error } =
+      await window.DOWA_SUPABASE
+        .from("wishlist_shares")
+        .insert({
+          wishlist_id: currentUser.wishlist_id,
+          customer_id: currentUser.customer_id,
+          share_token: token,
+          platform: platform || "native"
+        })
+        .select("id,share_token,platform,created_at")
+        .single();
+
+    if(error){
+      console.error("Wishlist share record failed:", error);
+      showToast("Unable to create wishlist share link.");
+      return null;
+    }
+
+    return `${window.location.origin}${window.location.pathname}?wishlist=${encodeURIComponent(data.share_token)}`;
+
+  }catch(error){
+    console.error("Unexpected wishlist share error:", error);
+    showToast("Unable to create wishlist share link.");
+    return null;
+  }
+}
+
+function getWishlistCustomerName(){
+
+  const fullName = String(currentUser?.name || "Customer").trim();
+
+  if(!fullName) return "Customer";
+
+  return fullName.split(/\s+/)[0];
 }
 
 function getWishlistShareText(){
 
   const items =
     products.filter(
-      product =>
-        wishlist.includes(
-          product.id
-        )
+      product => wishlist.includes(product.id)
     );
 
-
   if(!items.length){
-
     return "Check out DOWA Homes.";
-
   }
-
 
   const names =
     items
       .slice(0,5)
-      .map(
-        product=>product.name
-      )
+      .map(product=>product.name)
       .join(", ");
 
+  const customerName = getWishlistCustomerName();
 
   return (
-    `Hi! I created a wishlist on DOWA Homes. ` +
+    `Hi! I created ${customerName}'s DOWA Wishlist on DOWA Homes. ` +
     `I'd love some of these: ${names}. 🎁`
   );
-
 }
 
-
-function openWishlistShare(){
+async function openWishlistShare(){
 
   if(!currentUser){
-
-    showToast(
-      "Please sign in to share your wishlist."
-    );
-
+    showToast("Please sign in to share your wishlist.");
     return;
-
   }
-
 
   if(!wishlist.length){
-
-    showToast(
-      "Your wishlist is empty."
-    );
-
+    showToast("Your wishlist is empty.");
     return;
-
   }
 
+  const wishlistShareTitle = document.getElementById("wishlistShareTitle");
+  if(wishlistShareTitle){
+    const customerName = getWishlistCustomerName();
+    wishlistShareTitle.textContent = `🎁 ${customerName}'s DOWA Wishlist`;
+  }
 
   document
-    .getElementById(
-      "wishlistShareModal"
-    )
+    .getElementById("wishlistShareModal")
     .classList.add("show");
-
 }
-
 
 function closeWishlistShare(){
-
   document
-    .getElementById(
-      "wishlistShareModal"
-    )
+    .getElementById("wishlistShareModal")
     .classList.remove("show");
-
 }
 
-
-function shareWishlist(platform){
+async function shareWishlist(platform){
 
   if(!currentUser){
-
-    showToast(
-      "Please sign in to share your wishlist."
-    );
-
+    showToast("Please sign in to share your wishlist.");
     return;
-
   }
-
 
   if(!wishlist.length){
-
-    showToast(
-      "Your wishlist is empty."
-    );
-
+    showToast("Your wishlist is empty.");
     return;
-
   }
 
+  const text = getWishlistShareText();
+  const url = await createWishlistShare(platform);
 
-  const url =
-    getWishlistShareUrl();
-
-
-  const text =
-    getWishlistShareText();
-
+  if(!url) return;
 
   if(platform==="whatsapp"){
-
     window.open(
-      `https://wa.me/?text=${
-        encodeURIComponent(
-          text+"\n\n"+url
-        )
-      }`,
+      `https://wa.me/?text=${encodeURIComponent(text+"\n\n"+url)}`,
       "_blank"
     );
-
     return;
-
   }
-
 
   if(platform==="facebook"){
-
     window.open(
-      `https://www.facebook.com/sharer/sharer.php?u=${
-        encodeURIComponent(url)
-      }`,
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
       "_blank",
       "width=600,height=500"
     );
-
     return;
-
   }
-
 
   if(platform==="x"){
-
     window.open(
-      `https://twitter.com/intent/tweet?text=${
-        encodeURIComponent(text)
-      }&url=${
-        encodeURIComponent(url)
-      }`,
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
       "_blank",
       "width=600,height=500"
     );
-
     return;
-
   }
-
 
   if(platform==="copy"){
-
     navigator.clipboard
       .writeText(url)
-      .then(()=>{
-
-        showToast(
-          "Wishlist link copied."
-        );
-
-      })
-      .catch(()=>{
-
-        showToast(
-          "Unable to copy the wishlist link."
-        );
-
-      });
-
+      .then(()=>showToast("Wishlist link copied."))
+      .catch(()=>showToast("Unable to copy the wishlist link."));
     return;
-
   }
-
 
   if(platform==="native"){
-
     if(navigator.share){
-
       navigator.share({
-
-        title:
-          `${currentUser.name}'s DOWA Wishlist`,
-
+        title:`${getWishlistCustomerName()}'s DOWA Wishlist`,
         text,
-
         url
-
       }).catch(()=>{});
-
     }else{
-
       navigator.clipboard
         .writeText(url)
-        .then(()=>{
-
-          showToast(
-            "Wishlist link copied."
-          );
-
-        });
-
+        .then(()=>showToast("Wishlist link copied."))
+        .catch(()=>showToast("Unable to copy the wishlist link."));
     }
-
   }
-
 }
 
 
@@ -8170,6 +8438,13 @@ function renderAccount(){
         <div class="account-value">${defaultAddress ? escapeHtml([defaultAddress.street, defaultAddress.city, defaultAddress.state].filter(Boolean).join(", ")) : "No saved address yet."}</div>
         <br>
         <button class="account-card-link" type="button" onclick="renderAccountAddresses()">Manage addresses →</button>
+      </div>
+
+      <div class="account-hub-card">
+        <div class="eyebrow">Wishlist</div>
+        <h3>Things I'd love.</h3>
+        <p>Keep your favourite DOWA pieces saved to your account and share your wishlist with someone special.</p>
+        <button class="account-card-link" type="button" onclick="openWishlist()">View my wishlist →</button>
       </div>
 
       <div class="account-hub-card">
@@ -9336,11 +9611,13 @@ async function loadSupabaseOrdersForCurrentUser(){
       const items = (itemRows || []).map(item => ({
         id: item.id,
         productId: item.product_id,
+        variantId: item.variant_id || null,
         name: item.product_name || item.name || "DOWA Product",
         price: Number(item.unit_price ?? item.price ?? 0),
         quantity: Number(item.quantity || 0),
-        size: item.size || null,
-        color: item.color || item.colour || null
+        size: item.variant_name || null,
+        color: item.color || item.colour || null,
+        sku: item.sku || null
       }));
 
       loadedOrders.push({
@@ -9349,16 +9626,16 @@ async function loadSupabaseOrdersForCurrentUser(){
         userId: currentUser.id,
         date: row.created_at || new Date().toISOString(),
         items,
-        total: Number(row.total ?? 0),
-        status: row.status || "Order Confirmed",
+        total: Number(row.total_amount ?? row.total ?? 0),
+        subtotal: Number(row.subtotal ?? 0),
         delivery: row.delivery_address || row.shipping_address || {
           name: currentUser.name || "DOWA Customer",
           phone: currentUser.phone || "",
           address: currentUser.address || ""
         },
-        termsAccepted: !!row.terms_accepted,
-        termsAcceptedAt: row.terms_accepted_at || null,
-        customerConfirmed: !!row.customer_confirmed,
+        status: row.order_status || row.status || "Order Confirmed",
+        paymentStatus: row.payment_status || "Pending",
+        customerConfirmed: false,
         isDemo: false
       });
     }
@@ -9402,11 +9679,19 @@ async function createSupabaseOrderFromCheckout(){
   const orderPayload = {
     customer_id: customerId,
     order_number: orderNumber,
-    status: "Order Confirmed",
+    customer_name: delivery.name || currentUser.name || "DOWA Customer",
+    customer_email: currentUser.email || "",
+    customer_phone: delivery.phone || currentUser.phone || "",
+    delivery_address: delivery.address || delivery.address_line || (typeof delivery === "string" ? delivery : ""),
+    delivery_city: delivery.city || "",
+    delivery_state: delivery.state || "",
     subtotal,
-    total: subtotal,
-    terms_accepted: !!currentCheckoutOrder.termsAccepted,
-    terms_accepted_at: currentCheckoutOrder.termsAcceptedAt || new Date().toISOString()
+    delivery_fee: Number(currentCheckoutOrder.deliveryFee || 0),
+    discount_amount: Number(currentCheckoutOrder.discountAmount || 0),
+    total_amount: subtotal,
+    payment_status: "Pending",
+    order_status: "Order Confirmed",
+    notes: ""
   };
 
   const { data: orderRow, error: orderError } =
@@ -9421,15 +9706,39 @@ async function createSupabaseOrderFromCheckout(){
     throw orderError;
   }
 
-  const itemPayloads = currentCheckoutOrder.items.map(item => ({
-    order_id: orderRow.id,
-    product_id: item.productId,
-    product_name: item.name,
-    quantity: Number(item.quantity || 1),
-    unit_price: Number(item.price || 0),
-    size: item.size || null,
-    color: item.color || null
-  }));
+  const itemPayloads = currentCheckoutOrder.items.map(item => {
+    // order_items stores the selected product variant in variant_id / variant_name.
+    // The storefront cart keeps the customer's selected size in `size`, so resolve
+    // the matching Supabase product variant before inserting the order item.
+    const product = products.find(p => Number(p.id) === Number(item.productId));
+    const variants = Array.isArray(product?.variants) ? product.variants : [];
+    const variant = variants.find(v => {
+      const variantName = String(v.variantName || '').trim().toLowerCase();
+      const selectedSize = String(item.size || '').trim().toLowerCase();
+      const variantColor = String(v.color || '').trim().toLowerCase();
+      const selectedColor = String(item.color || '').trim().toLowerCase();
+
+      const sizeMatches = !selectedSize || variantName === selectedSize;
+      const colorMatches = !selectedColor || variantColor === selectedColor;
+      return sizeMatches && colorMatches;
+    }) || null;
+
+    const quantity = Number(item.quantity || 1);
+    const unitPrice = Number(item.price || 0);
+
+    return {
+      order_id: orderRow.id,
+      product_id: item.productId,
+      variant_id: variant?.id || null,
+      product_name: item.name,
+      variant_name: variant?.variantName || item.size || null,
+      color: item.color || variant?.color || null,
+      sku: variant?.sku || null,
+      unit_price: unitPrice,
+      quantity,
+      line_total: unitPrice * quantity
+    };
+  });
 
   if(itemPayloads.length){
     const { error: itemError } =
@@ -9450,11 +9759,11 @@ async function createSupabaseOrderFromCheckout(){
     userId: currentUser.id,
     date: orderRow.created_at || new Date().toISOString(),
     items: currentCheckoutOrder.items,
-    total: subtotal,
-    status: "Order Confirmed",
+    total: Number(orderRow.total_amount ?? subtotal),
+    subtotal: Number(orderRow.subtotal ?? subtotal),
+    status: orderRow.order_status || "Order Confirmed",
+    paymentStatus: orderRow.payment_status || "Pending",
     delivery,
-    termsAccepted: !!currentCheckoutOrder.termsAccepted,
-    termsAcceptedAt: currentCheckoutOrder.termsAcceptedAt,
     customerConfirmed: false,
     isDemo: false
   };
@@ -9820,124 +10129,97 @@ function loadProductFromUrl(){
    SHARED WISHLIST URL
 ========================================== */
 
-/*
-  IMPORTANT:
+async function loadWishlistFromUrl(){
 
-  At the current prototype stage, wishlist data lives
-  in localStorage. Therefore another device cannot yet
-  retrieve the owner's actual wishlist.
+  const params = new URLSearchParams(window.location.search);
+  const shareToken = params.get("wishlist");
 
-  The URL structure is already prepared for Supabase.
-
-  Example future URL:
-
-  /wishlist/WALE123
-
-  During Phase 4 we will connect this to Supabase so
-  anyone receiving the link can see the real wishlist.
-*/
-
-function loadWishlistFromUrl(){
-
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
-
-  const wishlistId =
-    params.get("wishlist");
-
-  if(!wishlistId)
+  if(!shareToken || !window.DOWA_SUPABASE){
     return;
-
-  let sharedProfile = null;
+  }
 
   try{
 
-    const decoded =
-      decodeURIComponent(
-        atob(
-          wishlistId
-        )
-      );
+    const { data, error } =
+      await window.DOWA_SUPABASE
+        .rpc("get_shared_wishlist", {
+          p_share_token: shareToken
+        });
 
-    sharedProfile =
-      JSON.parse(decoded);
+    if(error){
+      console.error("Shared wishlist load failed:", error);
+      showToast("This wishlist link could not be opened.");
+      return;
+    }
 
-    window.sharedWishlistCheckoutProfile =
-      sharedProfile;
+    if(!data){
+      showToast("This wishlist link is no longer available.");
+      return;
+    }
 
-  }catch(error){
+    const sharedProfile = data.customer || {};
+    const sharedItems = Array.isArray(data.items) ? data.items : [];
 
-    showToast(
-      "This wishlist link could not be opened."
-    );
+    window.sharedWishlistCheckoutProfile = sharedProfile;
+    window.sharedWishlistItems = sharedItems;
 
-    return;
+    showPage("shop");
 
-  }
+    const shopPage = document.getElementById("shopPage");
+    if(!shopPage) return;
 
-  // Prototype visitor view. Supabase will later provide the
-  // actual shared wishlist and profile photo across devices.
-  showPage("shop");
+    const existingBanner = document.getElementById("sharedWishlistBanner");
+    if(existingBanner) existingBanner.remove();
 
-  const shopPage =
-    document.getElementById("shopPage");
-
-  if(!shopPage)
-    return;
-
-  const existingBanner =
-    document.getElementById("sharedWishlistBanner");
-
-  if(existingBanner)
-    existingBanner.remove();
-
-  const profileImage =
-    sharedProfile?.profileImage || "";
-
-  const initials =
-    String(sharedProfile?.name || "DOWA")
+    const profileImage = sharedProfile.profileImage || "";
+    const initials = String(sharedProfile.name || "DOWA")
       .trim()
       .split(/\s+/)
       .slice(0,2)
       .map(name=>name.charAt(0).toUpperCase())
       .join("");
 
-  const avatar =
-    profileImage
-    ?
-    `<img src="${escapeHtml(profileImage)}" alt="${escapeHtml(sharedProfile?.name || "Wishlist owner")}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;">`
-    :
-    `<div style="width:54px;height:54px;border-radius:50%;background:var(--dark);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;">${escapeHtml(initials || "D")}</div>`;
+    const avatar =
+      profileImage
+      ? `<img src="${escapeHtml(profileImage)}" alt="${escapeHtml(sharedProfile.name || "Wishlist owner")}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;">`
+      : `<div style="width:54px;height:54px;border-radius:50%;background:var(--dark);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;">${escapeHtml(initials || "D")}</div>`;
 
-  const banner =
-    document.createElement("div");
+    const banner = document.createElement("div");
+    banner.id = "sharedWishlistBanner";
+    banner.style.cssText = "margin:0 5vw 30px;padding:18px 20px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;gap:14px;";
 
-  banner.id =
-    "sharedWishlistBanner";
+    banner.innerHTML = `
+      ${avatar}
+      <div style="flex:1;">
+        <div class="eyebrow">Shared wishlist</div>
+        <strong style="display:block;font-size:16px;margin-top:4px;">
+          ${escapeHtml(sharedProfile.name || "DOWA Customer")} shared this wishlist with you.
+        </strong>
+        <span style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">
+          ${sharedItems.length} saved ${sharedItems.length===1 ? "piece" : "pieces"} from DOWA Homes.
+        </span>
+      </div>
+    `;
 
-  banner.style.cssText =
-    "margin:0 5vw 30px;padding:18px 20px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;gap:14px;";
+    shopPage.insertBefore(banner, shopPage.firstElementChild);
 
-  banner.innerHTML = `
-    ${avatar}
-    <div style="flex:1;">
-      <div class="eyebrow">Shared wishlist</div>
-      <strong style="display:block;font-size:16px;margin-top:4px;">
-        ${escapeHtml(sharedProfile?.name || "DOWA Customer")} shared this wishlist with you.
-      </strong>
-      <span style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">
-        You can view the saved pieces and continue to checkout.
-      </span>
-    </div>
-  `;
+    const grid = shopPage.querySelector(".product-grid");
+    if(grid && sharedItems.length){
+      const sharedProducts = sharedItems.map(item=>({
+        id:Number(item.product_id),
+        name:item.name || "DOWA Product",
+        category:item.category || "",
+        price:Number(item.base_price) || 0,
+        image:item.main_image_url || "",
+        description:item.description || ""
+      }));
+      grid.innerHTML = sharedProducts.map(productCard).join("");
+    }
 
-  shopPage.insertBefore(
-    banner,
-    shopPage.firstElementChild
-  );
-
+  }catch(error){
+    console.error("Unexpected shared wishlist error:", error);
+    showToast("This wishlist link could not be opened.");
+  }
 }
 
 
@@ -9950,6 +10232,13 @@ renderHome();
 renderShop();
 
 updateCartCount();
+
+/*
+  Load the real Admin-created catalogue from Supabase.
+  The existing UI is preserved; the catalogue refreshes
+  when the Supabase query completes.
+*/
+loadSupabaseProducts();
 
 loadProductFromUrl();
 
@@ -9972,31 +10261,232 @@ function supportStorageKey(){ return privateStorageKey("dowa_support_conversatio
 let selectedAdminConversationId = null;
 
 async function getSupabaseCustomerId(){
-  if(!currentUser || !window.DOWA_SUPABASE) return null;
+  if(!currentUser || !window.DOWA_SUPABASE){
+    return null;
+  }
 
   if(currentUser.customer_id){
     return currentUser.customer_id;
   }
 
-  const { data: customer, error } =
-    await window.DOWA_SUPABASE
-      .from("customers")
-      .select("id")
-      .eq("auth_user_id", currentUser.auth_user_id || currentUser.id)
-      .maybeSingle();
+  try{
+    const authUserId = currentUser.auth_user_id || currentUser.id;
+    const authEmail = String(currentUser.email || "").trim().toLowerCase();
 
-  if(error){
-    console.error("Supabase customer lookup failed:", error);
+    let customer = null;
+    let error = null;
+
+    if(authUserId){
+      const result = await window.DOWA_SUPABASE
+        .from("customers")
+        .select("id, auth_user_id, full_name, email, phone, profile_image_url")
+        .eq("auth_user_id", authUserId)
+        .maybeSingle();
+
+      customer = result.data;
+      error = result.error;
+    }
+
+    if(error){
+      console.error("Supabase customer lookup failed:", error);
+      return null;
+    }
+
+    /* If the auth_user_id link is missing, recover the existing
+       customer record by email instead of creating a second profile. */
+    if(!customer && authEmail){
+      const emailResult = await window.DOWA_SUPABASE
+        .from("customers")
+        .select("id, auth_user_id, full_name, email, phone, profile_image_url")
+        .eq("email", authEmail)
+        .maybeSingle();
+
+      if(emailResult.error){
+        console.error("Supabase customer email lookup failed:", emailResult.error);
+        return null;
+      }
+
+      customer = emailResult.data;
+
+      if(customer && !customer.auth_user_id && authUserId){
+        const repairResult = await window.DOWA_SUPABASE
+          .from("customers")
+          .update({
+            auth_user_id: authUserId,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", customer.id);
+
+        if(repairResult.error){
+          console.warn("Customer auth_user_id repair failed:", repairResult.error);
+        }else{
+          customer.auth_user_id = authUserId;
+        }
+      }
+    }
+
+    if(!customer){
+      console.warn("No DOWA customer record found.");
+      return null;
+    }
+
+    currentUser.customer_id = customer.id;
+
+    if(customer.full_name){
+      currentUser.name = customer.full_name;
+    }
+
+    if(customer.email){
+      currentUser.email = customer.email;
+    }
+
+    if(customer.phone){
+      currentUser.phone = customer.phone;
+    }
+
+    if(customer.profile_image_url){
+      currentUser.profileImage = customer.profile_image_url;
+    }
+
+    savePrivateUserCache();
+
+    return customer.id;
+
+  }catch(error){
+    console.error("Unexpected Supabase customer lookup error:", error);
     return null;
   }
+}
 
-  if(!customer){
-    console.warn("No DOWA customer record found.");
-    return null;
+/* ==========================================
+   CUSTOMER NOTIFICATIONS
+========================================== */
+let customerNotifications=[];
+let customerNotificationPoll=null;
+
+function formatNotificationTime(value){
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString([], {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"});
+}
+
+function updateCustomerNotificationBadge(){
+  const badge=document.getElementById("customerNotificationBadge");
+  if(!badge) return;
+  const unread=customerNotifications.filter(n=>!n.is_read).length;
+  badge.textContent=unread>99?"99+":String(unread);
+  badge.classList.toggle("show", unread>0);
+}
+
+function renderCustomerNotifications(){
+  const holder=document.getElementById("customerNotificationList");
+  if(!holder) return;
+  if(!customerNotifications.length){
+    holder.innerHTML='<div class="notification-empty">You have no notifications yet.</div>';
+    updateCustomerNotificationBadge();
+    return;
   }
+  holder.innerHTML=customerNotifications.map(n=>`
+    <div class="notification-item ${n.is_read?"read":"unread"}" onclick="openCustomerNotification(${Number(n.id)})">
+      <span class="notification-dot"></span>
+      <div><h4>${escapeHtml(n.title||"DOWA Homes")}</h4><p>${escapeHtml(n.message||"")}</p></div>
+      <small>${escapeHtml(formatNotificationTime(n.created_at))}</small>
+    </div>
+  `).join("");
+  updateCustomerNotificationBadge();
+}
 
-  currentUser.customer_id = customer.id;
-  return customer.id;
+async function loadCustomerNotifications(silent=false){
+  if(!currentUser || !window.DOWA_SUPABASE){
+    customerNotifications=[];
+    updateCustomerNotificationBadge();
+    return;
+  }
+  try{
+    const customerId=await getSupabaseCustomerId();
+    if(!customerId){
+      customerNotifications=[];
+      updateCustomerNotificationBadge();
+      return;
+    }
+    const {data,error}=await window.DOWA_SUPABASE
+      .from("notifications")
+      .select("id,type,title,message,order_id,conversation_id,review_id,is_read,created_at")
+      .eq("recipient_customer_id",customerId)
+      .order("created_at",{ascending:false})
+      .limit(50);
+    if(error) throw error;
+    const previousUnread=customerNotifications.filter(n=>!n.is_read).length;
+    customerNotifications=data||[];
+    renderCustomerNotifications();
+    const newUnread=customerNotifications.filter(n=>!n.is_read).length;
+    if(!silent && newUnread>previousUnread && previousUnread>=0){
+      const newest=customerNotifications.find(n=>!n.is_read);
+      if(newest) showToast(newest.title||"You have a new notification.");
+    }
+  }catch(error){
+    console.error("Customer notifications load failed:",error);
+  }
+}
+
+async function markCustomerNotificationRead(id){
+  if(!currentUser||!window.DOWA_SUPABASE) return;
+  const customerId=currentUser.customer_id||await getSupabaseCustomerId();
+  if(!customerId) return;
+  const {error}=await window.DOWA_SUPABASE.from("notifications")
+    .update({is_read:true})
+    .eq("id",id)
+    .eq("recipient_customer_id",customerId);
+  if(error){console.error("Notification read update failed:",error);return;}
+  const item=customerNotifications.find(n=>Number(n.id)===Number(id));
+  if(item) item.is_read=true;
+  renderCustomerNotifications();
+}
+
+async function markAllCustomerNotificationsRead(){
+  if(!currentUser||!window.DOWA_SUPABASE) return;
+  const customerId=currentUser.customer_id||await getSupabaseCustomerId();
+  if(!customerId) return;
+  const {error}=await window.DOWA_SUPABASE.from("notifications")
+    .update({is_read:true})
+    .eq("recipient_customer_id",customerId)
+    .eq("is_read",false);
+  if(error){console.error("Mark all notifications failed:",error);showToast("Could not mark notifications as read.");return;}
+  customerNotifications.forEach(n=>n.is_read=true);
+  renderCustomerNotifications();
+}
+
+async function openCustomerNotification(id){
+  await markCustomerNotificationRead(id);
+  const item=customerNotifications.find(n=>Number(n.id)===Number(id));
+  if(!item) return;
+  closeCustomerNotifications();
+  if(item.type==="order_status" || item.type==="order_created"){
+    if(currentUser){showPage("account");setTimeout(()=>renderOrders(),0);}
+  }else if(item.type==="support_reply" || item.type==="support_status"){
+    if(currentUser) openHelpSupport();
+  }
+}
+
+async function openCustomerNotifications(){
+  if(!currentUser){
+    showToast("Please sign in to view notifications.");
+    showPage("auth");
+    return;
+  }
+  document.getElementById("customerNotificationsModal")?.classList.add("show");
+  await loadCustomerNotifications(true);
+}
+
+function closeCustomerNotifications(){document.getElementById("customerNotificationsModal")?.classList.remove("show");}
+
+function startCustomerNotificationPolling(){
+  clearInterval(customerNotificationPoll);
+  if(!currentUser) return;
+  loadCustomerNotifications(true);
+  customerNotificationPoll=setInterval(()=>{
+    if(document.visibilityState!=="hidden") loadCustomerNotifications(false);
+  },15000);
 }
 
 function makeSupportId(prefix="SUP"){ return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`; }
@@ -10166,7 +10656,7 @@ async function sendSupportMessage(){
             customer_id: customerId,
             order_id: orderId,
             subject: orderNumber ? `Order Support — ${orderNumber}` : "General Support",
-            status: "Open",
+            status: "New Message",
             last_message_at: now,
             updated_at: now
           })
@@ -10177,7 +10667,7 @@ async function sendSupportMessage(){
       conversation = createdConversation;
     }else{
       const conversationUpdate = {
-        status: "Open",
+        status: "New Message",
         last_message_at: now,
         updated_at: now
       };
@@ -10240,6 +10730,18 @@ document.addEventListener("keydown",event=>{if(event.key==="Escape"){const modal
 
 </script>
 
+<div class="modal-overlay" id="customerNotificationsModal" onclick="if(event.target===this)closeCustomerNotifications()">
+  <div class="notification-panel">
+    <div class="notification-head">
+      <h3>Notifications</h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-outline-dark" style="padding:8px 10px;font-size:10px" onclick="markAllCustomerNotificationsRead()">Mark all read</button>
+        <button class="btn btn-dark" style="padding:8px 10px;font-size:10px" onclick="closeCustomerNotifications()">Close</button>
+      </div>
+    </div>
+    <div id="customerNotificationList" class="notification-list"></div>
+  </div>
+</div>
 
 <!-- =========================
      MOBILE BOTTOM SHOP NAV
