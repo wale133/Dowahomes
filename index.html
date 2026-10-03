@@ -621,6 +621,19 @@ nav{
   margin-bottom:13px;
 }
 
+.detail-price .sale-price{
+  display:inline-block;
+  margin-right:10px;
+}
+
+.detail-price .original-price{
+  display:inline-block;
+  color:var(--muted);
+  font-size:14px;
+  text-decoration:line-through;
+  text-decoration-thickness:1px;
+}
+
 .rating-summary{
   display:flex;
   align-items:center;
@@ -1038,6 +1051,15 @@ nav{
 .account-menu button.active{
   background:var(--dark);
   color:white;
+}
+
+/* Orders view intentionally uses the full account content area. */
+.account-page.orders-only .account-menu{
+  display:none;
+}
+
+.account-page.orders-only .account-grid{
+  grid-template-columns:1fr;
 }
 
 .account-panel{
@@ -1783,6 +1805,33 @@ footer{
 .account-socials{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
 .account-social{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 13px;border:1px solid var(--line);background:#fff;color:var(--ink);font:600 10px Arial,sans-serif;text-decoration:none}
 .account-social:hover{border-color:var(--dark)}
+.account-center-back{
+  width:32px;
+  height:32px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--line);
+  border-radius:50%;
+  background:#fff;
+  color:var(--ink);
+  padding:0;
+  margin:0 0 14px;
+  cursor:pointer;
+}
+.account-center-back span:first-child{
+  font-size:18px;
+  line-height:1;
+  font-weight:400;
+}
+.account-center-back span:last-child{display:none}
+.account-center-back:hover{background:#fcfaf7}
+.account-profile-photo-editor{display:flex;align-items:center;gap:14px;padding:14px 0}
+.account-profile-photo-preview{width:72px;height:72px;border-radius:50%;overflow:hidden;background:var(--warm);display:flex;align-items:center;justify-content:center;font:600 20px Arial,sans-serif;color:var(--dark);flex:0 0 72px}
+.account-profile-photo-preview img{width:100%;height:100%;object-fit:cover;display:block}
+.account-profile-photo-actions{display:flex;gap:8px;flex-wrap:wrap}
+.account-profile-photo-input{display:none}
+.account-profile-photo-note{display:block;color:var(--muted);font-size:10px;line-height:1.5;margin-top:4px}
 .account-section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:15px;flex-wrap:wrap;margin-bottom:25px}
 .account-section-head h2{font:400 clamp(30px,4vw,40px) Georgia,serif;margin:5px 0 0}
 .account-section-head p{font-size:11px;color:var(--muted);line-height:1.6;max-width:560px}
@@ -1806,6 +1855,40 @@ footer{
 .account-address-actions{display:flex;gap:8px;flex-wrap:wrap}
 .account-mini-btn{border:1px solid var(--line);background:#fff;padding:9px 11px;font:600 10px Arial,sans-serif;cursor:pointer}
 .account-empty{border:1px solid var(--line);padding:28px;color:var(--muted);font-size:11px;line-height:1.6}
+
+
+/* =========================
+   MOBILE ACCOUNT CENTER
+   Reference-led account layout. Desktop account UI remains unchanged.
+========================= */
+.account-mobile-center{display:none}
+.account-mobile-profile{display:flex;align-items:center;gap:14px;padding:14px 15px;background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:14px}
+.account-mobile-avatar{width:56px;height:56px;border-radius:50%;overflow:hidden;flex:0 0 56px;background:#ebe5da;display:flex;align-items:center;justify-content:center;font:600 16px Arial,sans-serif;color:var(--dark)}
+.account-mobile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.account-mobile-profile-copy{min-width:0}
+.account-mobile-profile-copy strong{display:block;font-size:15px;line-height:1.25}
+.account-mobile-profile-copy span{display:block;color:var(--muted);font-size:10px;line-height:1.45;overflow-wrap:anywhere}
+.account-mobile-list{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.account-mobile-row{width:100%;min-height:56px;display:flex;align-items:center;gap:13px;padding:0 13px;background:#fff;border:0;border-bottom:1px solid #eee9e1;color:var(--ink);text-align:left;font:500 12px Arial,sans-serif}
+.account-mobile-row:last-child{border-bottom:0}
+.account-mobile-row:hover{background:#fcfaf7}
+.account-mobile-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex:0 0 20px;color:var(--ink)}
+.account-mobile-icon svg{width:18px;height:18px;display:block;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.account-mobile-label{flex:1;min-width:0}
+.account-mobile-chevron{width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:#777a72;flex:0 0 16px}
+.account-mobile-chevron svg{width:14px;height:14px;display:block;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.account-mobile-logout{margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.account-mobile-row.logout{color:#e53935;border-bottom:0}
+.account-mobile-row.logout .account-mobile-icon{color:#e53935}
+
+@media(max-width:600px){
+  .account-page.mobile-account-center{padding:24px 4% 82px}
+  .account-page.mobile-account-center .account-grid{display:block}
+  .account-page.mobile-account-center .account-menu{display:none}
+  .account-page.mobile-account-center .account-panel{padding:0;border:0;background:transparent}
+  .account-page.mobile-account-center .account-mobile-center{display:block}
+  .account-page.mobile-account-center .account-hub-desktop{display:none}
+}
 
 /* =========================================================
    DOWA RESPONSIVE AUDIT — GLOBAL RESPONSIVE LAYER
@@ -2044,6 +2127,19 @@ textarea{
 
   .nav-actions{
     gap:2px;
+  }
+
+  /* Mobile: the bottom navigation is the primary navigation.
+     Keep only Notifications in the top bar. */
+  .nav-actions > .nav-btn:not(.notification-bell),
+  .nav-actions > .mobile-menu{
+    display:none !important;
+  }
+
+  .nav-actions > .notification-bell{
+    display:inline-flex !important;
+    min-width:42px;
+    min-height:42px;
   }
 
   .nav-btn,
@@ -3019,55 +3115,6 @@ textarea{
     DOWA
   </div>
 
-  <div class="nav-links">
-
-    <a href="#" onclick="showPage('home')">
-      Home
-    </a>
-
-    <div class="nav-shop-wrap">
-      <a href="#" class="nav-shop-trigger" onclick="showPage('shop')">
-        Shop
-      </a>
-
-      <div class="nav-dropdown">
-
-        <div class="nav-dropdown-column">
-          <h4>Shop</h4>
-          <a href="#" onclick="showPage('shop')">All Products</a>
-          <a href="#" onclick="filterCategory('Sofas')">Sofas</a>
-          <a href="#" onclick="filterCategory('Bedframes')">Bedframes</a>
-          <a href="#" onclick="filterCategory('Pillows')">Pillows</a>
-          <a href="#" onclick="filterCategory('Art')">Art</a>
-        </div>
-
-        <div class="nav-dropdown-column">
-          <h4>Shop by Space</h4>
-          <a href="#" onclick="filterCategory('Sofas')">Living Room</a>
-          <a href="#" onclick="filterCategory('Bedframes')">Bedroom</a>
-          <a href="#" onclick="showPage('shop')">Home Essentials</a>
-          <a href="#" onclick="showPage('shop')">Complete Your Space</a>
-        </div>
-
-        <div class="nav-dropdown-column nav-featured">
-          <strong>Find your piece.</strong>
-          <span>Explore furniture designed to make your home feel comfortable, refined and yours.</span>
-          <a href="#" onclick="showPage('shop')">Shop the collection →</a>
-        </div>
-
-      </div>
-    </div>
-
-    <a href="#" onclick="showPage('shop')">
-      Collections
-    </a>
-
-    <a href="#" onclick="showPage('home')">
-      About
-    </a>
-
-  </div>
-
   <div class="nav-actions">
 
     <button
@@ -3742,7 +3789,7 @@ textarea{
       </button>
 
       <button
-        onclick="renderOrders()"
+        onclick="setMobileBottomNavActive('orders');renderOrders()"
       >
         Orders
       </button>
@@ -3751,12 +3798,6 @@ textarea{
         onclick="renderWallet()"
       >
         DOWA Wallet
-      </button>
-
-      <button
-        onclick="openWishlist()"
-      >
-        Wishlist
       </button>
 
       <button
@@ -5189,36 +5230,48 @@ async function loadSupabaseWishlistForCurrentUser(){
 
   try{
 
-    const authUserId = currentUser.auth_user_id || currentUser.id;
+    // Prefer the customer_id already resolved during session hydration.
+    // This avoids a second Auth -> customers lookup and prevents wishlist
+    // initialization from racing with the login/session hydration flow.
+    let customerId = Number(currentUser.customer_id) || null;
 
-    const { data: customer, error: customerError } =
-      await window.DOWA_SUPABASE
-        .from("customers")
-        .select("id")
-        .eq("auth_user_id", authUserId)
-        .maybeSingle();
+    if(!customerId){
+      const authUserId = currentUser.auth_user_id || currentUser.id;
 
-    if(customerError){
-      console.error("Customer lookup for wishlist failed:", customerError);
-      wishlist = [];
-      updateMobileBottomNav();
-      return;
+      const { data: customer, error: customerError } =
+        await window.DOWA_SUPABASE
+          .from("customers")
+          .select("id")
+          .eq("auth_user_id", authUserId)
+          .maybeSingle();
+
+      if(customerError){
+        console.error("Customer lookup for wishlist failed:", customerError);
+        wishlist = [];
+        currentUser.wishlist_id = null;
+        updateMobileBottomNav();
+        return;
+      }
+
+      if(!customer){
+        // Authenticated Supabase users without a DOWA customer profile
+        // (for example an admin/CEO account) simply have no customer wishlist.
+        console.warn("No DOWA customer record found for this account.");
+        wishlist = [];
+        currentUser.wishlist_id = null;
+        updateMobileBottomNav();
+        return;
+      }
+
+      customerId = Number(customer.id);
+      currentUser.customer_id = customerId;
     }
-
-    if(!customer){
-      console.warn("No DOWA customer record found for this account.");
-      wishlist = [];
-      updateMobileBottomNav();
-      return;
-    }
-
-    currentUser.customer_id = customer.id;
 
     let { data: wishlistRow, error: wishlistError } =
       await window.DOWA_SUPABASE
         .from("wishlists")
         .select("id")
-        .eq("customer_id", customer.id)
+        .eq("customer_id", customerId)
         .limit(1)
         .maybeSingle();
 
@@ -5234,7 +5287,7 @@ async function loadSupabaseWishlistForCurrentUser(){
       const { data: createdWishlist, error: createError } =
         await window.DOWA_SUPABASE
           .from("wishlists")
-          .insert({ customer_id: customer.id })
+          .insert({ customer_id: customerId })
           .select("id")
           .single();
 
@@ -5576,6 +5629,208 @@ async function clearSupabaseCartForCurrentUser(){
 ========================================== */
 let __dowaHydrationPromise = null;
 
+
+/* ==========================================
+   DOWA HOMES — CUSTOMER ACQUISITION TRACKING
+   Phase 2: capture first-touch source before signup.
+   This does not change the storefront UI.
+========================================== */
+const DOWA_ACQUISITION_STORAGE_KEY = "dowa_acquisition_first_touch";
+const DOWA_PENDING_SIGNUP_ACQUISITION_KEY = "dowa_pending_signup_acquisition";
+const DOWA_ACQUISITION_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
+
+function normalizeDowaAcquisitionSource(value){
+  const source = String(value || "").trim().toLowerCase();
+
+  if(!source) return "direct";
+  if(source.includes("instagram")) return "instagram";
+  if(source.includes("facebook") || source.includes("fb.com")) return "facebook";
+  if(source.includes("tiktok")) return "tiktok";
+  if(source.includes("whatsapp") || source.includes("wa.me")) return "whatsapp";
+  if(source.includes("google")) return "google";
+  if(source.includes("youtube")) return "youtube";
+
+  return "referral";
+}
+
+function readDowaAcquisitionTouch(){
+  try{
+    const raw = localStorage.getItem(DOWA_ACQUISITION_STORAGE_KEY);
+    if(!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if(!parsed || !parsed.first_touch_at) return null;
+
+    const age = Date.now() - new Date(parsed.first_touch_at).getTime();
+    if(!Number.isFinite(age) || age > DOWA_ACQUISITION_MAX_AGE_MS){
+      localStorage.removeItem(DOWA_ACQUISITION_STORAGE_KEY);
+      return null;
+    }
+
+    return parsed;
+  }catch(error){
+    return null;
+  }
+}
+
+function captureDowaAcquisitionTouch(){
+  try{
+    // First touch wins. Do not overwrite an existing source with a later visit.
+    const existing = readDowaAcquisitionTouch();
+    if(existing) return existing;
+
+    const params = new URLSearchParams(window.location.search || "");
+    const referrer = String(document.referrer || "").trim();
+
+    const utmSource = String(params.get("utm_source") || "").trim();
+    const utmMedium = String(params.get("utm_medium") || "").trim();
+    const utmCampaign = String(params.get("utm_campaign") || "").trim();
+    const utmTerm = String(params.get("utm_term") || "").trim();
+    const utmContent = String(params.get("utm_content") || "").trim();
+
+    let source = utmSource
+      ? normalizeDowaAcquisitionSource(utmSource)
+      : "";
+
+    if(!source && referrer){
+      try{
+        const referrerUrl = new URL(referrer, window.location.origin);
+
+        // An internal DOWA page is not a new acquisition source.
+        if(referrerUrl.origin !== window.location.origin){
+          source = normalizeDowaAcquisitionSource(referrerUrl.hostname);
+        }
+      }catch(error){
+        source = normalizeDowaAcquisitionSource(referrer);
+      }
+    }
+
+    if(!source){
+      source = "direct";
+    }
+
+    const touch = {
+      acquisition_source: source,
+      acquisition_medium: utmMedium || null,
+      acquisition_campaign: utmCampaign || null,
+      acquisition_term: utmTerm || null,
+      acquisition_content: utmContent || null,
+      landing_page: `${window.location.pathname || "/"}${window.location.search || ""}`,
+      first_touch_at: new Date().toISOString()
+    };
+
+    localStorage.setItem(
+      DOWA_ACQUISITION_STORAGE_KEY,
+      JSON.stringify(touch)
+    );
+
+    return touch;
+  }catch(error){
+    console.warn("DOWA acquisition source capture failed:", error);
+    return null;
+  }
+}
+
+function getDowaAcquisitionTouch(){
+  return captureDowaAcquisitionTouch() || readDowaAcquisitionTouch();
+}
+
+function markDowaSignupAcquisitionPending(){
+  try{
+    const touch = getDowaAcquisitionTouch();
+    if(!touch) return;
+
+    localStorage.setItem(
+      DOWA_PENDING_SIGNUP_ACQUISITION_KEY,
+      JSON.stringify(touch)
+    );
+  }catch(error){
+    console.warn("DOWA pending acquisition save failed:", error);
+  }
+}
+
+function getDowaPendingSignupAcquisition(){
+  try{
+    const raw = localStorage.getItem(DOWA_PENDING_SIGNUP_ACQUISITION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(error){
+    return null;
+  }
+}
+
+async function saveDowaCustomerAcquisition(user){
+  if(!user || !window.DOWA_SUPABASE) return;
+
+  try{
+    const customerId = Number(currentUser?.customer_id || 0);
+    if(!customerId) return;
+
+    // Never overwrite an existing first-touch attribution.
+    const { data: existing, error: lookupError } =
+      await window.DOWA_SUPABASE
+        .from("customer_acquisition")
+        .select("id")
+        .eq("customer_id", customerId)
+        .maybeSingle();
+
+    if(lookupError){
+      console.warn("DOWA acquisition lookup failed:", lookupError);
+      return;
+    }
+
+    if(existing) return;
+
+    const metadata = user.user_metadata || {};
+    const pending = getDowaPendingSignupAcquisition();
+
+    const source = metadata.dowa_acquisition_source
+      ? {
+          acquisition_source: metadata.dowa_acquisition_source,
+          acquisition_medium: metadata.dowa_acquisition_medium || null,
+          acquisition_campaign: metadata.dowa_acquisition_campaign || null,
+          acquisition_term: metadata.dowa_acquisition_term || null,
+          acquisition_content: metadata.dowa_acquisition_content || null,
+          landing_page: metadata.dowa_acquisition_landing_page || null,
+          first_touch_at: metadata.dowa_acquisition_first_touch_at || new Date().toISOString()
+        }
+      : pending;
+
+    if(!source || !source.acquisition_source) return;
+
+    const { error: insertError } =
+      await window.DOWA_SUPABASE
+        .from("customer_acquisition")
+        .insert({
+          customer_id: customerId,
+          acquisition_source: source.acquisition_source,
+          acquisition_medium: source.acquisition_medium || null,
+          acquisition_campaign: source.acquisition_campaign || null,
+          acquisition_term: source.acquisition_term || null,
+          acquisition_content: source.acquisition_content || null,
+          landing_page: source.landing_page || null,
+          first_touch_at: source.first_touch_at || new Date().toISOString()
+        });
+
+    if(insertError){
+      console.warn("DOWA acquisition save failed:", insertError);
+      return;
+    }
+
+    localStorage.removeItem(DOWA_PENDING_SIGNUP_ACQUISITION_KEY);
+
+    console.log(
+      "DOWA customer acquisition recorded:",
+      source.acquisition_source
+    );
+
+  }catch(error){
+    console.warn("Unexpected DOWA acquisition save error:", error);
+  }
+}
+
+// Capture the visitor's first-touch source as soon as the storefront loads.
+captureDowaAcquisitionTouch();
+
 async function hydrateCurrentUserFromSession(session){
   if(!session || !session.user){
     currentUser = null;
@@ -5674,7 +5929,30 @@ async function hydrateCurrentUserFromSession(session){
       console.error("DOWA customer profile hydration failed:", customerError);
     }
 
+    // The storefront is customer-facing. An authenticated Supabase user
+    // without a matching customers record (for example a staff/CEO account)
+    // must not be rendered as "Customer" with the staff email.
+    if(!hydratedUser.customer_id){
+      console.warn("Authenticated user has no DOWA customer profile. Signing out of storefront.");
+      try{ await window.DOWA_SUPABASE.auth.signOut(); }catch(signOutError){
+        console.warn("Storefront customer guard sign-out failed:", signOutError);
+      }
+      currentUser = null;
+      clearPrivateState();
+      customerNotifications=[];
+      clearInterval(customerNotificationPoll);
+      updateCustomerNotificationBadge();
+      updateCartCount();
+      updateMobileBottomNav();
+      return null;
+    }
+
     currentUser = hydratedUser;
+
+    // Attach first-touch acquisition data to the customer only if the
+    // customer does not already have an attribution record.
+    await saveDowaCustomerAcquisition(user);
+
     loadPrivateState(user.id);
 
     // Always restore the account-owned Supabase state, never an old guest cache.
@@ -5800,11 +6078,25 @@ document.addEventListener("visibilitychange", ()=>{
   }
 });
 
-/* IMPORTANT: do not hydrate the customer before the storefront DOM exists. */
+/* IMPORTANT: do not hydrate the customer before the storefront DOM exists.
+   After the session is restored, restore the page that was open before refresh.
+   This is especially important for Account/Profile because it must wait for
+   currentUser to be hydrated before restoreLastStorefrontPage() can open it. */
+async function initializeDowaStorefrontSession(){
+  try{
+    await bootstrapDowaSession();
+  }catch(error){
+    console.error("DOWA initial session bootstrap failed:", error);
+  }
+
+  // Direct product/shared-wishlist URLs still take priority.
+  restoreLastStorefrontPage();
+}
+
 if(document.readyState === "loading"){
-  document.addEventListener("DOMContentLoaded", bootstrapDowaSession, {once:true});
+  document.addEventListener("DOMContentLoaded", initializeDowaStorefrontSession, {once:true});
 }else{
-  bootstrapDowaSession();
+  initializeDowaStorefrontSession();
 }
 
 let users = [];
@@ -5926,7 +6218,7 @@ function mobileBottomNavigate(section){
       return;
     }
     setMobileBottomNavActive("orders");
-    showPage("account");
+    showPage("account", {skipAccountRender:true, navSection:"orders"});
     renderOrders();
     return;
   }
@@ -5952,7 +6244,58 @@ function mobileBottomNavigate(section){
    PAGE NAVIGATION
 ========================================== */
 
-function showPage(page){
+const DOWA_LAST_PAGE_KEY = "dowa_last_storefront_page";
+
+function rememberLastStorefrontPage(page){
+  // Remember the last normal storefront page for refreshes in this browser tab.
+  // Product pages are restored through ?product=ID instead.
+  if(page === "product" || page === "auth" || page === "admin") return;
+  try{
+    sessionStorage.setItem(DOWA_LAST_PAGE_KEY, page);
+  }catch(error){}
+}
+
+function restoreLastStorefrontPage(){
+  const params = new URLSearchParams(window.location.search);
+
+  // Direct product/shared-wishlist URLs take priority over the remembered page.
+  if(params.get("product")) return false;
+  if(params.get("wishlist")) return false;
+  if(params.get("share")) return false;
+
+  let lastPage = "home";
+  try{
+    lastPage = sessionStorage.getItem(DOWA_LAST_PAGE_KEY) || "home";
+  }catch(error){}
+
+  if(lastPage === "account" && !currentUser){
+    return false;
+  }
+
+  if(["home","shop","account"].includes(lastPage)){
+    showPage(lastPage, {skipRemember:true});
+    return true;
+  }
+
+  return false;
+}
+
+function showPage(page, options = {}){
+
+  if(!options.skipRemember){
+    rememberLastStorefrontPage(page);
+  }
+
+  // Keep the browser URL aligned with the page currently being viewed.
+  // Otherwise an old ?product=... parameter can reopen the last product
+  // after a normal page refresh, even after the customer has navigated away.
+  if(page !== "product") {
+    const url = new URL(window.location.href);
+    if(url.searchParams.has("product")){
+      url.searchParams.delete("product");
+      window.history.replaceState(null, "", url.pathname + (url.search ? url.search : "") + url.hash);
+    }
+  }
 
   // Navigation should always work normally even when the cart drawer is open.
   const cartDrawer = document.getElementById("cartDrawer");
@@ -6009,7 +6352,7 @@ function showPage(page){
 
   if(page==="account"){
 
-    setMobileBottomNavActive("account");
+    setMobileBottomNavActive(options.navSection || "account");
 
     if(!currentUser){
 
@@ -6023,7 +6366,9 @@ function showPage(page){
 
     }
 
-    renderAccount();
+    if(!options.skipAccountRender){
+      renderAccount();
+    }
 
   }
 
@@ -6296,11 +6641,50 @@ async function openProduct(id){
   currentProduct =
     product;
 
-  selectedSize =
-    "3-Seater";
+  // The catalogue normally includes variants from the initial Supabase load.
+  // If that batch returned before variants were available, fetch this product's
+  // variants directly so size/colour selection never disappears.
+  if(product.category === "Sofas" && (!Array.isArray(product.variants) || !product.variants.length) && window.DOWA_SUPABASE){
+    try{
+      const { data: liveVariants, error: liveVariantError } =
+        await window.DOWA_SUPABASE
+          .from("product_variants")
+          .select("id, product_id, variant_name, color, sku, original_price, sale_price, stock_quantity, status")
+          .eq("product_id", Number(product.id))
+          .order("id", { ascending:true });
 
-  selectedColor =
-    null;
+      if(liveVariantError){
+        console.error("DOWA product variant lookup failed:", liveVariantError);
+      }else if(Array.isArray(liveVariants) && liveVariants.length){
+        product.variants = liveVariants.map(row => ({
+          id: Number(row.id),
+          productId: Number(row.product_id),
+          variantName: String(row.variant_name || "").trim(),
+          color: String(row.color || "").trim(),
+          sku: String(row.sku || "").trim(),
+          originalPrice: Number(row.original_price ?? 0),
+          salePrice: Number(row.sale_price ?? row.original_price ?? 0),
+          stockQuantity: Number(row.stock_quantity ?? 0),
+          lowStockThreshold: 0,
+          status: row.status || ""
+        }));
+      }
+    }catch(error){
+      console.error("DOWA live product variant lookup failed:", error);
+    }
+  }
+
+  const sofaVariants = Array.isArray(product.variants) ? product.variants : [];
+
+  // Start with the first real Supabase variant instead of hardcoding a size.
+  // This keeps the storefront in sync with whatever sizes/colors Admin has configured.
+  if(product.category === "Sofas" && sofaVariants.length){
+    selectedSize = String(sofaVariants[0].variantName || "").trim() || null;
+    selectedColor = String(sofaVariants[0].color || "").trim() || null;
+  }else{
+    selectedSize = null;
+    selectedColor = null;
+  }
 
   productQuantity =
     1;
@@ -6316,8 +6700,85 @@ async function openProduct(id){
   showPage("product");
 
   renderProductDetail();
+
+  // Track the product only when a signed-in customer opens its detail page.
+  await recordRecentlyViewedProduct(product.id);
   await loadSupabaseReviewsForProduct(product.id);
   renderProductDetail();
+
+}
+
+
+async function recordRecentlyViewedProduct(productId){
+
+  if(!currentUser || !window.DOWA_SUPABASE || !productId){
+    return;
+  }
+
+  try{
+
+    const customerId = await getSupabaseCustomerId();
+
+    if(!customerId){
+      return;
+    }
+
+    const numericProductId = Number(productId);
+
+    if(!Number.isFinite(numericProductId)){
+      return;
+    }
+
+    const { data: existing, error: lookupError } =
+      await window.DOWA_SUPABASE
+        .from("customer_product_views")
+        .select("id, view_count")
+        .eq("customer_id", customerId)
+        .eq("product_id", numericProductId)
+        .maybeSingle();
+
+    if(lookupError){
+      console.warn("Recently viewed lookup failed:", lookupError);
+      return;
+    }
+
+    if(existing){
+
+      const { error: updateError } =
+        await window.DOWA_SUPABASE
+          .from("customer_product_views")
+          .update({
+            view_count: Number(existing.view_count || 0) + 1,
+            last_viewed_at: new Date().toISOString()
+          })
+          .eq("id", existing.id);
+
+      if(updateError){
+        console.warn("Recently viewed update failed:", updateError);
+      }
+
+    }else{
+
+      const { error: insertError } =
+        await window.DOWA_SUPABASE
+          .from("customer_product_views")
+          .insert({
+            customer_id: customerId,
+            product_id: numericProductId,
+            view_count: 1
+          });
+
+      if(insertError){
+        console.warn("Recently viewed insert failed:", insertError);
+      }
+
+    }
+
+  }catch(error){
+
+    console.warn("Recently viewed tracking failed:", error);
+
+  }
 
 }
 
@@ -6336,29 +6797,73 @@ function renderProductDetail(){
     getProductReviewSummary(product);
 
 
-  const colors = [
+  const sofaVariants = Array.isArray(product.variants) ? product.variants : [];
 
-    {
-      name:"Cream",
-      className:"swatch-cream"
-    },
+  const availableSizes = [...new Set(
+    sofaVariants
+      .map(v => String(v.variantName || "").trim())
+      .filter(Boolean)
+  )];
 
-    {
-      name:"Charcoal",
-      className:"swatch-charcoal"
-    },
+  const availableColors = [...new Set(
+    sofaVariants
+      .map(v => String(v.color || "").trim())
+      .filter(Boolean)
+  )];
 
-    {
-      name:"Forest Green",
-      className:"swatch-green"
-    },
+  // If the live variant request is temporarily empty, keep the existing
+  // storefront option UI visible so customers can still select the known
+  // DOWA sofa options. When real variants are present, they remain authoritative.
+  const displaySizes = availableSizes.length
+    ? availableSizes
+    : (product.category === "Sofas"
+        ? ["2-Seater", "3-Seater", "4-Seater", "5-Seater", "L-Shape", "U-Shape", "Custom Size"]
+        : []);
 
-    {
-      name:"Tan",
-      className:"swatch-tan"
-    }
+  const displayColors = availableColors.length
+    ? availableColors
+    : (product.category === "Sofas"
+        ? ["Cream", "Charcoal", "Forest Green", "Tan"]
+        : []);
 
-  ];
+  // Resolve the actual Supabase variant from the currently selected options.
+  // If an exact size + colour combination does not exist, fall back to the
+  // selected size (or selected colour) so the storefront never silently
+  // falls back to the product base price.
+  let selectedVariant = sofaVariants.find(v => {
+    const sizeMatches = !selectedSize || String(v.variantName || "").trim().toLowerCase() === String(selectedSize).trim().toLowerCase();
+    const colorMatches = !selectedColor || String(v.color || "").trim().toLowerCase() === String(selectedColor).trim().toLowerCase();
+    return sizeMatches && colorMatches;
+  }) || null;
+
+  if(!selectedVariant && selectedSize){
+    selectedVariant = sofaVariants.find(v =>
+      String(v.variantName || "").trim().toLowerCase() === String(selectedSize).trim().toLowerCase()
+    ) || null;
+  }
+
+  if(!selectedVariant && selectedColor){
+    selectedVariant = sofaVariants.find(v =>
+      String(v.color || "").trim().toLowerCase() === String(selectedColor).trim().toLowerCase()
+    ) || null;
+  }
+
+  const displayPrice = selectedVariant
+    ? Number(selectedVariant.salePrice ?? selectedVariant.originalPrice ?? product.price ?? 0)
+    : Number(product.price || 0);
+
+  const originalDisplayPrice = selectedVariant
+    ? Number(selectedVariant.originalPrice ?? displayPrice ?? 0)
+    : Number(product.price || 0);
+
+  const hasSalePrice =
+    Number.isFinite(originalDisplayPrice) &&
+    Number.isFinite(displayPrice) &&
+    originalDisplayPrice > displayPrice;
+
+  const priceMarkup = hasSalePrice
+    ? `<span class="sale-price">${money(displayPrice)}</span><span class="original-price">${money(originalDisplayPrice)}</span>`
+    : money(displayPrice);
 
 
   document
@@ -6412,7 +6917,7 @@ function renderProductDetail(){
 
 
           <div class="detail-price">
-            ${money(product.price)}
+            ${priceMarkup}
           </div>
 
 
@@ -6450,12 +6955,7 @@ function renderProductDetail(){
               <div class="size-options">
 
                 ${
-                  [
-                    "2-Seater",
-                    "3-Seater",
-                    "4-Seater",
-                    "L-Shape"
-                  ]
+                  displaySizes
                   .map(size=>`
 
                     <button
@@ -6500,37 +7000,38 @@ function renderProductDetail(){
                 <div class="color-swatches">
 
                   ${
-                    colors.map(color=>`
+                    displayColors.map(color=>{
+                      const safeClass = color.toLowerCase().replace(/[^a-z0-9]+/g,"-");
+                      return `
 
                       <button
                         type="button"
                         class="
                           color-option
                           ${
-                            selectedColor===color.name
+                            selectedColor===color
                             ? "selected"
                             : ""
                           }
                         "
-                        onclick="selectColor('${color.name}'); return false;"
-                        title="${color.name}"
-                        aria-label="Choose ${color.name}"
+                        onclick="selectColor('${color.replace(/'/g, "\\'")}'); return false;"
+                        title="${color}"
+                        aria-label="Choose ${color}"
                       >
 
                         <span
-                          class="
-                            color-swatch
-                            ${color.className}
-                          "
+                          class="color-swatch swatch-${safeClass}"
+                          style="background:${color.toLowerCase()};"
                         ></span>
 
                         <span style="font-size:10px;color:var(--muted);">
-                          ${color.name}
+                          ${color}
                         </span>
 
                       </button>
 
-                    `)
+                    `;
+                    })
                     .join("")
                   }
 
@@ -6890,8 +7391,32 @@ async function submitProductReview(){
 
 function selectSize(size){
 
-  selectedSize =
-    size;
+  selectedSize = String(size || "").trim();
+
+  // Keep the current colour when that colour exists for the selected size.
+  // Otherwise switch to the first colour available for the selected size.
+  const variants = Array.isArray(currentProduct?.variants)
+    ? currentProduct.variants
+    : [];
+
+  const sizeVariants = variants.filter(v =>
+    String(v.variantName || "").trim().toLowerCase() ===
+    selectedSize.toLowerCase()
+  );
+
+  const matchingColour = sizeVariants.find(v =>
+    selectedColor &&
+    String(v.color || "").trim().toLowerCase() ===
+    String(selectedColor).trim().toLowerCase()
+  );
+
+  if(matchingColour){
+    selectedColor = String(matchingColour.color || "").trim();
+  }else if(sizeVariants.length){
+    selectedColor = String(sizeVariants[0].color || "").trim() || null;
+  }else{
+    selectedColor = null;
+  }
 
   renderProductDetail();
 
@@ -6900,11 +7425,34 @@ function selectSize(size){
 
 function selectColor(color){
 
-  selectedColor = color;
+  selectedColor = String(color || "").trim();
+
+  // Keep the current size when that colour exists for the selected size.
+  // Otherwise switch to the first size available for the selected colour.
+  const variants = Array.isArray(currentProduct?.variants)
+    ? currentProduct.variants
+    : [];
+
+  const colorVariants = variants.filter(v =>
+    String(v.color || "").trim().toLowerCase() ===
+    selectedColor.toLowerCase()
+  );
+
+  const matchingSize = colorVariants.find(v =>
+    selectedSize &&
+    String(v.variantName || "").trim().toLowerCase() ===
+    String(selectedSize).trim().toLowerCase()
+  );
+
+  if(matchingSize){
+    selectedSize = String(matchingSize.variantName || "").trim() || selectedSize;
+  }else if(colorVariants.length){
+    selectedSize = String(colorVariants[0].variantName || "").trim() || selectedSize;
+  }
 
   renderProductDetail();
 
-  showToast("Colour selected: " + color);
+  showToast("Colour selected: " + selectedColor);
 
 }
 
@@ -7130,6 +7678,21 @@ function addCurrentProduct(){
 }
 
 
+function getSelectedProductVariant(product, size, color){
+  const variants = Array.isArray(product?.variants) ? product.variants : [];
+  if(!variants.length) return null;
+
+  const normalizedSize = String(size || "").trim().toLowerCase();
+  const normalizedColor = String(color || "").trim().toLowerCase();
+
+  return variants.find(v => {
+    const sizeMatches = !normalizedSize || String(v.variantName || "").trim().toLowerCase() === normalizedSize;
+    const colorMatches = !normalizedColor || String(v.color || "").trim().toLowerCase() === normalizedColor;
+    return sizeMatches && colorMatches;
+  }) || null;
+}
+
+
 function addToCartWithoutDrawer(
   product,
   quantity,
@@ -7143,6 +7706,11 @@ function addToCartWithoutDrawer(
     showToast("Please sign in to add items to your cart.");
     return;
   }
+
+  const selectedVariant = getSelectedProductVariant(product, size, color);
+  const unitPrice = selectedVariant
+    ? Number(selectedVariant.salePrice ?? selectedVariant.originalPrice ?? product.price ?? 0)
+    : Number(product.price || 0);
 
   const existing =
     cart.find(item=>
@@ -7172,7 +7740,7 @@ function addToCartWithoutDrawer(
         product.name,
 
       price:
-        product.price,
+        unitPrice,
 
       quantity:
         quantity,
@@ -7719,7 +8287,21 @@ async function createAccount(){
 
             phone: phone,
 
-            address: address
+            address: address,
+
+            dowa_acquisition_source: getDowaAcquisitionTouch()?.acquisition_source || null,
+
+            dowa_acquisition_medium: getDowaAcquisitionTouch()?.acquisition_medium || null,
+
+            dowa_acquisition_campaign: getDowaAcquisitionTouch()?.acquisition_campaign || null,
+
+            dowa_acquisition_term: getDowaAcquisitionTouch()?.acquisition_term || null,
+
+            dowa_acquisition_content: getDowaAcquisitionTouch()?.acquisition_content || null,
+
+            dowa_acquisition_landing_page: getDowaAcquisitionTouch()?.landing_page || null,
+
+            dowa_acquisition_first_touch_at: getDowaAcquisitionTouch()?.first_touch_at || null
 
           }
 
@@ -7751,6 +8333,10 @@ async function createAccount(){
       automatically creates the customer profile
       and primary address.
     */
+
+    // Keep the first-touch source available even when email confirmation
+    // delays the customer session until a later login.
+    markDowaSignupAcquisitionPending();
 
 
     if(data.session){
@@ -7939,13 +8525,10 @@ async function toggleWishlist(id){
 
   if(!currentUser.wishlist_id){
 
-    showToast(
-      "Your wishlist is still loading. Please try again."
-    );
-
     await loadSupabaseWishlistForCurrentUser();
 
     if(!currentUser.wishlist_id){
+      showToast("Wishlist is unavailable for this account. Please sign in with a DOWA customer account.");
       return;
     }
 
@@ -8039,7 +8622,10 @@ function openWishlist(){
       p=>wishlist.includes(p.id)
     );
 
-  showPage("account");
+  showPage("account", {
+    skipAccountRender:true,
+    navSection:"wishlist"
+  });
 
   const accountPage =
     document.getElementById("accountPage");
@@ -8067,6 +8653,8 @@ function openWishlist(){
   }
 
   accountPanel.innerHTML = `
+
+    ${renderAccountCenterBack()}
 
     <div class="wishlist-header">
 
@@ -8397,106 +8985,318 @@ function buyWishlistItem(productId){
    ACCOUNT
 ========================================== */
 
-function renderAccount(){
+async function renderAccount(){
 
   if(!currentUser) return;
 
+  // Keep the existing desktop account hub intact while using the cleaner
+  // mobile account-center layout on phones.
+  const accountPage = document.querySelector("#accountPage .account-page");
+  if(accountPage){
+    accountPage.classList.remove("orders-only");
+    accountPage.classList.add("mobile-account-center");
+  }
+
+  // Refresh the customer profile so the account center uses the latest name,
+  // email, phone and profile image without changing the authentication flow.
+  try{
+    if(window.DOWA_SUPABASE){
+      let customer = null;
+      let customerError = null;
+      const customerId = Number(currentUser.customer_id) || null;
+      const authUserId = currentUser.auth_user_id || currentUser.id;
+
+      if(customerId){
+        const result = await window.DOWA_SUPABASE
+          .from("customers")
+          .select("id,auth_user_id,full_name,email,phone,profile_image_url")
+          .eq("id", customerId)
+          .maybeSingle();
+        customer = result.data;
+        customerError = result.error;
+      }else if(authUserId){
+        const result = await window.DOWA_SUPABASE
+          .from("customers")
+          .select("id,auth_user_id,full_name,email,phone,profile_image_url")
+          .eq("auth_user_id", authUserId)
+          .maybeSingle();
+        customer = result.data;
+        customerError = result.error;
+      }
+
+      if(!customer && currentUser.email){
+        const result = await window.DOWA_SUPABASE
+          .from("customers")
+          .select("id,auth_user_id,full_name,email,phone,profile_image_url")
+          .ilike("email", currentUser.email.trim())
+          .maybeSingle();
+        customer = result.data;
+        customerError = result.error;
+      }
+
+      if(customerError){
+        console.warn("Account customer profile refresh failed:", customerError);
+      }
+
+      if(customer){
+        currentUser.customer_id = customer.id;
+        currentUser.auth_user_id = customer.auth_user_id || currentUser.auth_user_id || currentUser.id;
+        currentUser.name = customer.full_name || currentUser.name || "";
+        currentUser.email = customer.email || currentUser.email || "";
+        currentUser.phone = customer.phone || currentUser.phone || "";
+        currentUser.profileImage = customer.profile_image_url || currentUser.profileImage || "";
+        savePrivateUserCache();
+        localStorage.setItem("dowaUser", JSON.stringify(currentUser));
+      }
+    }
+  }catch(error){
+    console.warn("Account customer profile refresh failed:", error);
+  }
+
   const firstName = String(currentUser.name || "Customer").split(" ")[0];
-  const addresses = currentUser.addresses || [];
-  const defaultAddress = addresses[0] || null;
+  const profileImage = String(currentUser.profileImage || "").trim();
+  const initials = escapeHtml(
+    String(currentUser.name || "Customer")
+      .trim()
+      .split(/\s+/)
+      .slice(0,2)
+      .map(part=>part.charAt(0).toUpperCase())
+      .join("") || "C"
+  );
 
   document.getElementById("accountPanel").innerHTML = `
 
-    <div class="account-hub-intro">
-      <div>
-        <div class="eyebrow">My account</div>
-        <h2>Hello, ${escapeHtml(firstName)}.</h2>
-        <p>Manage your DOWA profile, orders, delivery details, saved items and conversations with the DOWA team.</p>
-      </div>
+    <div class="account-mobile-center">
 
-      <div class="account-hub-actions">
-        <button class="btn btn-dark" type="button" onclick="renderEditProfile()">Edit Profile</button>
-        <button class="btn btn-outline-dark" type="button" onclick="openHelpSupport()">Chat with DOWA</button>
-      </div>
-    </div>
-
-    <div class="account-hub-grid">
-
-      <div class="account-hub-card">
-        <div class="eyebrow">Profile</div>
-        <h3>Your details</h3>
-        <p>Keep your contact information current for orders and support.</p>
-        <div class="account-value"><strong>${escapeHtml(currentUser.name || "Not provided")}</strong><br>${escapeHtml(currentUser.email || "Not provided")}<br>${escapeHtml(currentUser.phone || "Not provided")}</div>
-        <br>
-        <button class="account-card-link" type="button" onclick="renderEditProfile()">Edit profile →</button>
-      </div>
-
-      <div class="account-hub-card">
-        <div class="eyebrow">Delivery</div>
-        <h3>Your addresses</h3>
-        <p>Save and manage the addresses you use for DOWA deliveries.</p>
-        <div class="account-value">${defaultAddress ? escapeHtml([defaultAddress.street, defaultAddress.city, defaultAddress.state].filter(Boolean).join(", ")) : "No saved address yet."}</div>
-        <br>
-        <button class="account-card-link" type="button" onclick="renderAccountAddresses()">Manage addresses →</button>
-      </div>
-
-      <div class="account-hub-card">
-        <div class="eyebrow">Wishlist</div>
-        <h3>Things I'd love.</h3>
-        <p>Keep your favourite DOWA pieces saved to your account and share your wishlist with someone special.</p>
-        <button class="account-card-link" type="button" onclick="openWishlist()">View my wishlist →</button>
-      </div>
-
-      <div class="account-hub-card">
-        <div class="eyebrow">Support</div>
-        <h3>Chat with DOWA</h3>
-        <p>Send a message in the website and continue the conversation when our team replies.</p>
-        <button class="btn btn-dark" type="button" onclick="openHelpSupport()">Open DOWA Chat</button>
-      </div>
-
-      <div class="account-hub-card">
-        <div class="eyebrow">Help</div>
-        <h3>FAQs</h3>
-        <p>Find quick answers about orders, delivery, products and support.</p>
-        <button class="account-card-link" type="button" onclick="renderAccountFaqs()">View FAQs →</button>
-      </div>
-
-      <div class="account-hub-card">
-        <div class="eyebrow">Information</div>
-        <h3>Terms & Conditions</h3>
-        <p>Read the terms that apply when using DOWA Homes and placing orders.</p>
-        <button class="account-card-link" type="button" onclick="renderAccountTerms()">Read terms →</button>
-      </div>
-
-      <div class="account-hub-card">
-        <div class="eyebrow">DOWA Homes</div>
-        <h3>Follow us</h3>
-        <p>Stay connected with DOWA Homes across our social profiles.</p>
-        <div class="account-socials">
-          <a class="account-social" href="https://www.instagram.com/dowahomes/" target="_blank" rel="noopener noreferrer">Instagram</a>
-          <a class="account-social" href="https://www.tiktok.com/@dowahomes" target="_blank" rel="noopener noreferrer">TikTok</a>
-          <a class="account-social" href="https://www.facebook.com/dowahomes/" target="_blank" rel="noopener noreferrer">Facebook</a>
+      <div class="account-mobile-profile">
+        <div class="account-mobile-avatar">
+          ${profileImage
+            ? `<img src="${escapeHtml(profileImage)}" alt="${escapeHtml(currentUser.name || "Customer")}" loading="lazy">`
+            : `<span>${initials}</span>`
+          }
+        </div>
+        <div class="account-mobile-profile-copy">
+          <strong>${escapeHtml(currentUser.name || "Customer")}</strong>
+          <span>${escapeHtml(currentUser.email || "Email not provided")}</span>
+          <span>DOWA Homes customer</span>
         </div>
       </div>
 
+      <div class="account-mobile-list">
+
+        <button class="account-mobile-row" type="button" onclick="renderAccount()">
+          <span class="account-mobile-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5.5 20c.7-3.5 2.8-5.5 6.5-5.5s5.8 2 6.5 5.5"></path></svg>
+          </span>
+          <span class="account-mobile-label">Profile</span>
+          <span class="account-mobile-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg></span>
+        </button>
+
+        <button class="account-mobile-row" type="button" onclick="renderEditProfile()">
+          <span class="account-mobile-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.2-1 10.7-10.7a2.1 2.1 0 0 0-3-3L5.2 16.1 4 20Z"></path><path d="m14.5 6.5 3 3"></path></svg>
+          </span>
+          <span class="account-mobile-label">Edit Profile</span>
+          <span class="account-mobile-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg></span>
+        </button>
+
+        <button class="account-mobile-row" type="button" onclick="setMobileBottomNavActive('orders');renderOrders()">
+          <span class="account-mobile-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 4-2 4 2 4 2v12l-4 2-4-2-4 2-4-2V7l4-2Z"></path><path d="m8 5 4 2 4-2M12 7v12"></path></svg>
+          </span>
+          <span class="account-mobile-label">Orders</span>
+          <span class="account-mobile-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg></span>
+        </button>
+
+        <button class="account-mobile-row" type="button" onclick="renderWallet()">
+          <span class="account-mobile-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H19v16H6.5A2.5 2.5 0 0 1 4 17.5v-11Z"></path><path d="M4 7h13"></path><path d="M15 12h5v4h-5a2 2 0 0 1 0-4Z"></path><circle cx="15.5" cy="14" r=".5"></circle></svg>
+          </span>
+          <span class="account-mobile-label">DOWA Wallet</span>
+          <span class="account-mobile-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg></span>
+        </button>
+
+        <button class="account-mobile-row" type="button" onclick="openWishlist()">
+          <span class="account-mobile-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.7c0 5-8.8 10.3-8.8 10.3S3.2 13.7 3.2 8.7A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.5Z"></path></svg>
+          </span>
+          <span class="account-mobile-label">Wishlist</span>
+          <span class="account-mobile-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg></span>
+        </button>
+
+        <button class="account-mobile-row" type="button" onclick="renderAccountAddresses()">
+          <span class="account-mobile-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.4 6-11a6 6 0 1 0-12 0c0 5.6 6 11 6 11Z"></path><circle cx="12" cy="10" r="2"></circle></svg>
+          </span>
+          <span class="account-mobile-label">Delivery Addresses</span>
+          <span class="account-mobile-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg></span>
+        </button>
+
+        <button class="account-mobile-row" type="button" onclick="openHelpSupport()">
+          <span class="account-mobile-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 9 9 0 0 1-3-.5L5 20l1.2-3.1A7.2 7.2 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z"></path></svg>
+          </span>
+          <span class="account-mobile-label">Chat with DOWA</span>
+          <span class="account-mobile-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg></span>
+        </button>
+
+        <button class="account-mobile-row" type="button" onclick="renderAccountFaqs()">
+          <span class="account-mobile-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.8 9a2.3 2.3 0 1 1 3.6 1.9c-1.2.8-1.8 1.2-1.8 2.6"></path><path d="M12 16.8h.01"></path></svg>
+          </span>
+          <span class="account-mobile-label">FAQs</span>
+          <span class="account-mobile-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg></span>
+        </button>
+
+        <button class="account-mobile-row" type="button" onclick="renderAccountTerms()">
+          <span class="account-mobile-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6V3Z"></path><path d="M15 3v5h4M9 12h6M9 16h6"></path></svg>
+          </span>
+          <span class="account-mobile-label">Terms &amp; Conditions</span>
+          <span class="account-mobile-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg></span>
+        </button>
+
+      </div>
+
+      <div class="account-mobile-logout">
+        <button class="account-mobile-row logout" type="button" onclick="logout()">
+          <span class="account-mobile-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5v16h5"></path><path d="M14 8l4 4-4 4M8 12h10"></path></svg>
+          </span>
+          <span class="account-mobile-label">Logout</span>
+          <span class="account-mobile-chevron"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg></span>
+        </button>
+      </div>
+
     </div>
+
+    <div class="account-hub-desktop">
+      <div class="account-hub-intro">
+        <div>
+          <div class="eyebrow">My account</div>
+          <h2>Hello, ${escapeHtml(firstName)}.</h2>
+          <p>Manage your DOWA profile, orders, delivery details, saved items and conversations with the DOWA team.</p>
+        </div>
+
+        <div class="account-hub-actions">
+          <button class="btn btn-dark" type="button" onclick="renderEditProfile()">Edit Profile</button>
+          <button class="btn btn-outline-dark" type="button" onclick="openHelpSupport()">Chat with DOWA</button>
+        </div>
+      </div>
+
+      <div class="account-hub-grid">
+        <div class="account-hub-card">
+          <div class="eyebrow">Profile</div>
+          <h3>Your details</h3>
+          <p>Keep your contact information current for orders and support.</p>
+          <div class="account-value"><strong>${escapeHtml(currentUser.name || "Not provided")}</strong><br>${escapeHtml(currentUser.email || "Not provided")}<br>${escapeHtml(currentUser.phone || "Not provided")}</div>
+          <br>
+          <button class="account-card-link" type="button" onclick="renderEditProfile()">Edit profile →</button>
+        </div>
+
+        <div class="account-hub-card">
+          <div class="eyebrow">Delivery</div>
+          <h3>Your addresses</h3>
+          <p>Save and manage the addresses you use for DOWA deliveries.</p>
+          <div class="account-value">No saved address yet.</div>
+          <br>
+          <button class="account-card-link" type="button" onclick="renderAccountAddresses()">Manage addresses →</button>
+        </div>
+
+        <div class="account-hub-card">
+          <div class="eyebrow">Support</div>
+          <h3>Chat with DOWA</h3>
+          <p>Send a message in the website and continue the conversation when our team replies.</p>
+          <button class="btn btn-dark" type="button" onclick="openHelpSupport()">Open DOWA Chat</button>
+        </div>
+
+        <div class="account-hub-card">
+          <div class="eyebrow">Help</div>
+          <h3>FAQs</h3>
+          <p>Find quick answers about orders, delivery, products and support.</p>
+          <button class="account-card-link" type="button" onclick="renderAccountFaqs()">View FAQs →</button>
+        </div>
+
+        <div class="account-hub-card">
+          <div class="eyebrow">Information</div>
+          <h3>Terms &amp; Conditions</h3>
+          <p>Read the terms that apply when using DOWA Homes and placing orders.</p>
+          <button class="account-card-link" type="button" onclick="renderAccountTerms()">Read terms →</button>
+        </div>
+
+        <div class="account-hub-card">
+          <div class="eyebrow">DOWA Homes</div>
+          <h3>Follow us</h3>
+          <p>Stay connected with DOWA Homes across our social profiles.</p>
+          <div class="account-socials">
+            <a class="account-social" href="https://www.instagram.com/dowahomes/" target="_blank" rel="noopener noreferrer">Instagram</a>
+            <a class="account-social" href="https://www.tiktok.com/@dowahomes" target="_blank" rel="noopener noreferrer">TikTok</a>
+            <a class="account-social" href="https://www.facebook.com/dowahomes/" target="_blank" rel="noopener noreferrer">Facebook</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
   `;
 
 }
 
+function renderAccountCenterBack(){
+  return `
+    <button
+      class="account-center-back"
+      type="button"
+      onclick="renderAccount()"
+      aria-label="Back to Account"
+    >
+      <span aria-hidden="true">←</span>
+      <span>Account</span>
+    </button>
+  `;
+}
+
 function renderEditProfile(){
   if(!currentUser) return;
+
+  const profileImage = String(currentUser.profileImage || "").trim();
+  const initials = escapeHtml(
+    String(currentUser.name || "Customer")
+      .trim()
+      .split(/\s+/)
+      .slice(0,2)
+      .map(part=>part.charAt(0).toUpperCase())
+      .join("") || "C"
+  );
+
   document.getElementById("accountPanel").innerHTML = `
+    ${renderAccountCenterBack()}
+
     <div class="account-section-head">
       <div>
         <div class="eyebrow">Profile</div>
         <h2>Edit your profile</h2>
         <p>Update the information DOWA uses for your account, orders and support.</p>
       </div>
-      <button class="btn btn-outline-dark" type="button" onclick="renderAccount()">Back to Account</button>
     </div>
 
     <form class="account-form" onsubmit="saveAccountProfile(event)">
+      <div class="account-profile-photo-editor">
+        <div class="account-profile-photo-preview" id="accountProfilePhotoPreview">
+          ${profileImage ? `<img src="${escapeHtml(profileImage)}" alt="Profile photo" loading="lazy">` : `<span>${initials}</span>`}
+        </div>
+        <div>
+          <strong style="display:block;font-size:12px;margin-bottom:6px;">Profile picture</strong>
+          <div class="account-profile-photo-actions">
+            <label class="btn btn-outline-dark" for="accountProfilePhotoFile" style="cursor:pointer;">Change Photo</label>
+            <button class="account-mini-btn" type="button" onclick="removeProfilePhoto()">Remove</button>
+          </div>
+          <span class="account-profile-photo-note">JPG, PNG or WebP. Maximum 5MB.</span>
+          <input id="accountProfilePhotoFile" class="account-profile-photo-input" type="file" accept="image/jpeg,image/png,image/webp" onchange="handleProfilePhotoSelected(this)">
+        </div>
+      </div>
+
+      <input id="accountProfilePhoto" type="hidden" value="${escapeHtml(profileImage)}">
+
       <div class="account-form-row">
         <div class="account-form-group">
           <label for="accountProfileName">Full Name</label>
@@ -8512,13 +9312,6 @@ function renderEditProfile(){
         <input id="accountProfileEmail" type="email" value="${escapeHtml(currentUser.email || "")}" required>
       </div>
       <div class="account-form-group">
-        <label for="accountProfilePhoto">Profile Photo URL</label>
-        <input id="accountProfilePhoto" type="url" value="${escapeHtml(currentUser.profileImage || "")}" placeholder="https://...">
-        <small style="color:var(--muted);font-size:11px;line-height:1.5;">
-          Use a publicly accessible image URL. This photo can appear when you share your wishlist.
-        </small>
-      </div>
-      <div class="account-form-group">
         <label for="accountProfileAddress">Primary Delivery Address</label>
         <textarea id="accountProfileAddress" rows="4">${escapeHtml(currentUser.address || "")}</textarea>
       </div>
@@ -8530,6 +9323,95 @@ function renderEditProfile(){
   `;
 }
 
+async function handleProfilePhotoSelected(input){
+  const file = input?.files?.[0];
+  if(!file) return;
+
+  if(file.size > 5 * 1024 * 1024){
+    input.value = "";
+    showToast("Profile photo must be 5MB or smaller.");
+    return;
+  }
+
+  if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
+    input.value = "";
+    showToast("Please choose a JPG, PNG or WebP image.");
+    return;
+  }
+
+  try{
+    const preview = document.getElementById("accountProfilePhotoPreview");
+    if(preview){
+      const objectUrl = URL.createObjectURL(file);
+      preview.innerHTML = `<img src="${objectUrl}" alt="Profile photo preview">`;
+      preview.dataset.objectUrl = objectUrl;
+    }
+
+    const hidden = document.getElementById("accountProfilePhoto");
+    if(hidden) hidden.value = "__NEW_PROFILE_PHOTO__";
+  }catch(error){
+    console.error("Profile photo preview failed:", error);
+    showToast("Unable to preview this image.");
+  }
+}
+
+function removeProfilePhoto(){
+  const input = document.getElementById("accountProfilePhotoFile");
+  const hidden = document.getElementById("accountProfilePhoto");
+  const preview = document.getElementById("accountProfilePhotoPreview");
+
+  if(input) input.value = "";
+  if(hidden) hidden.value = "";
+
+  if(preview){
+    const oldUrl = preview.dataset.objectUrl;
+    if(oldUrl){
+      try{ URL.revokeObjectURL(oldUrl); }catch(e){}
+    }
+    const initials = escapeHtml(
+      String(currentUser?.name || "Customer")
+        .trim()
+        .split(/\s+/)
+        .slice(0,2)
+        .map(part=>part.charAt(0).toUpperCase())
+        .join("") || "C"
+    );
+    preview.innerHTML = `<span>${initials}</span>`;
+    delete preview.dataset.objectUrl;
+  }
+}
+
+async function uploadCustomerProfilePhoto(file){
+  if(!file || !currentUser || !window.DOWA_SUPABASE) return null;
+
+  const authUserId = currentUser.auth_user_id || currentUser.id;
+  if(!authUserId) return null;
+
+  const extension = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g,"") || "jpg";
+  const filePath = `${authUserId}/profile.${extension}`;
+
+  const { error: uploadError } = await window.DOWA_SUPABASE
+    .storage
+    .from("customer-profile-images")
+    .upload(filePath, file, {
+      upsert:true,
+      contentType:file.type || "image/jpeg",
+      cacheControl:"3600"
+    });
+
+  if(uploadError){
+    console.error("Customer profile photo upload failed:", uploadError);
+    throw uploadError;
+  }
+
+  const { data } = window.DOWA_SUPABASE
+    .storage
+    .from("customer-profile-images")
+    .getPublicUrl(filePath);
+
+  return data?.publicUrl || null;
+}
+
 async function saveAccountProfile(event){
   event.preventDefault();
   if(!currentUser || !window.DOWA_SUPABASE) return;
@@ -8537,8 +9419,10 @@ async function saveAccountProfile(event){
   const name = document.getElementById("accountProfileName").value.trim();
   const phone = document.getElementById("accountProfilePhone").value.trim();
   const email = document.getElementById("accountProfileEmail").value.trim().toLowerCase();
-  const profileImage =
+  let profileImage =
     document.getElementById("accountProfilePhoto")?.value.trim() || "";
+  const profileFile =
+    document.getElementById("accountProfilePhotoFile")?.files?.[0] || null;
   const primaryAddress =
     document.getElementById("accountProfileAddress")?.value.trim() || "";
 
@@ -8590,6 +9474,18 @@ async function saveAccountProfile(event){
       console.error("Supabase Auth profile update failed:", authError);
       showToast(authError.message || "Unable to update your profile.");
       return;
+    }
+
+    if(profileFile){
+      try{
+        const uploadedProfileUrl = await uploadCustomerProfilePhoto(profileFile);
+        if(uploadedProfileUrl) profileImage = uploadedProfileUrl;
+      }catch(photoError){
+        showToast("Profile photo could not be uploaded. Please try again.");
+        return;
+      }
+    }else if(profileImage === "__NEW_PROFILE_PHOTO__"){
+      profileImage = currentUser.profileImage || "";
     }
 
     const { error: customerUpdateError } =
@@ -8703,7 +9599,7 @@ async function renderAccountAddresses(){
         <h2>Delivery addresses</h2>
         <p>Manage the places where you want DOWA Homes to deliver your orders.</p>
       </div>
-      <button class="btn btn-outline-dark" type="button" onclick="renderAccount()">Back to Account</button>
+      ${renderAccountCenterBack()}
     </div>
 
     <div class="account-address-list">
@@ -8883,7 +9779,7 @@ function renderAccountFaqs(){
   document.getElementById("accountPanel").innerHTML = `
     <div class="account-section-head">
       <div><div class="eyebrow">Help</div><h2>Frequently asked questions</h2><p>Quick answers before you contact the DOWA team.</p></div>
-      <button class="btn btn-outline-dark" type="button" onclick="renderAccount()">Back to Account</button>
+      ${renderAccountCenterBack()}
     </div>
     <div class="account-faq-list">
       <details><summary>How do I track my order?</summary><p>Open Orders in your DOWA account to see your order status and delivery progress.</p></details>
@@ -8900,7 +9796,7 @@ function renderAccountTerms(){
   document.getElementById("accountPanel").innerHTML = `
     <div class="account-section-head">
       <div><div class="eyebrow">Information</div><h2>Terms & Conditions</h2><p>Important information for using DOWA Homes and placing orders.</p></div>
-      <button class="btn btn-outline-dark" type="button" onclick="renderAccount()">Back to Account</button>
+      ${renderAccountCenterBack()}
     </div>
     <div class="account-legal">
       <h3>Orders</h3>
@@ -9772,16 +10668,32 @@ async function createSupabaseOrderFromCheckout(){
 async function renderOrders(){
   if(!currentUser) return;
 
-  await loadSupabaseOrdersForCurrentUser();
+  // Orders is its own bottom-navigation destination even though the
+  // content lives inside the account page shell.
+  setMobileBottomNavActive("orders");
+
+  const accountPage = document.querySelector("#accountPage .account-page");
+  if(accountPage) accountPage.classList.add("orders-only");
 
   const panel = document.getElementById("accountPanel");
   if(!panel) return;
+
+  // Clear the previous Profile/Account panel immediately so it can never
+  // flash while the real order data is loading from Supabase.
+  panel.innerHTML = `
+    <div class="order-card" style="text-align:center;padding:45px;">
+      <p style="color:var(--muted);font-size:12px;margin:0;">Loading your orders...</p>
+    </div>
+  `;
+
+  await loadSupabaseOrdersForCurrentUser();
 
   const userOrders = orders
     .slice()
     .sort((a,b)=>new Date(b.date)-new Date(a.date));
 
   panel.innerHTML = `
+    ${renderAccountCenterBack()}
     <div class="wishlist-header">
       <div>
         <div class="eyebrow">My orders</div>
@@ -9895,12 +10807,13 @@ function openAccountPanelOriginal(panel){
     return;
   }
 
-  showPage("account");
-
   if(panel === "orders"){
+    showPage("account", {skipAccountRender:true});
     renderOrders();
     return;
   }
+
+  showPage("account");
 
   if(panel === "wallet"){
     renderWallet();
@@ -9920,6 +10833,7 @@ function renderWallet(){
   const transactions = getWalletTransactions();
 
   panel.innerHTML = `
+    ${renderAccountCenterBack()}
     <div class="wishlist-header">
       <div>
         <div class="eyebrow">DOWA Wallet</div>
@@ -10086,7 +11000,7 @@ function toggleMobileMenu(){
    PRODUCT URL
 ========================================== */
 
-function loadProductFromUrl(){
+async function loadProductFromUrl(){
 
   const params =
     new URLSearchParams(
@@ -10106,7 +11020,7 @@ function loadProductFromUrl(){
 
   const product =
     products.find(
-      p=>p.id===productId
+      p=>Number(p.id)===productId
     );
 
 
@@ -10117,6 +11031,49 @@ function loadProductFromUrl(){
   currentProduct =
     product;
 
+  // Direct product URLs can render before the Supabase catalogue has
+  // finished attaching variants. Fetch the variants for this product
+  // before rendering so Size and Colour can never disappear.
+  if(
+    product.category === "Sofas" &&
+    (!Array.isArray(product.variants) || !product.variants.length) &&
+    window.DOWA_SUPABASE
+  ){
+    try{
+      const { data: liveVariants, error } =
+        await window.DOWA_SUPABASE
+          .from("product_variants")
+          .select("id, product_id, variant_name, color, sku, original_price, sale_price, stock_quantity, status")
+          .eq("product_id", productId)
+          .order("id", { ascending:true });
+
+      if(error){
+        console.error("DOWA direct product variant lookup failed:", error);
+      }else if(Array.isArray(liveVariants)){
+        product.variants = liveVariants.map(row => ({
+          id: Number(row.id),
+          productId: Number(row.product_id),
+          variantName: String(row.variant_name || "").trim(),
+          color: String(row.color || "").trim(),
+          sku: String(row.sku || "").trim(),
+          originalPrice: Number(row.original_price ?? 0),
+          salePrice: Number(row.sale_price ?? row.original_price ?? 0),
+          stockQuantity: Number(row.stock_quantity ?? 0),
+          lowStockThreshold: 0,
+          status: row.status || ""
+        }));
+      }
+    }catch(error){
+      console.error("DOWA direct product variant lookup failed:", error);
+    }
+  }
+
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+
+  if(product.category === "Sofas" && variants.length){
+    selectedSize = String(variants[0].variantName || "").trim() || null;
+    selectedColor = String(variants[0].color || "").trim() || null;
+  }
 
   showPage("product");
 
@@ -10462,7 +11419,7 @@ async function openCustomerNotification(id){
   if(!item) return;
   closeCustomerNotifications();
   if(item.type==="order_status" || item.type==="order_created"){
-    if(currentUser){showPage("account");setTimeout(()=>renderOrders(),0);}
+    if(currentUser){setMobileBottomNavActive("orders");showPage("account", {skipAccountRender:true});setTimeout(()=>renderOrders(),0);}
   }else if(item.type==="support_reply" || item.type==="support_status"){
     if(currentUser) openHelpSupport();
   }
